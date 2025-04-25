@@ -37,6 +37,16 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
+        //Get main navigation items
+        $mainNavItems = [];
+        if($user){
+            $this->getNavItems($user, 'main');
+        }
+
+        $footerNavItems = $this->getNavItems($user, 'footer');
+
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         return [
