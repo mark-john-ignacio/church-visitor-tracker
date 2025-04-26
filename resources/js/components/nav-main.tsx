@@ -1,105 +1,157 @@
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'; // Import Collapsible
+// filepath: c:\Users\Mark\Herd\myxfin-react-laravel\resources\js\components\nav-main.tsx
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'; // Import Dropdown components
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import * as LucideIcons from 'lucide-react';
-import { ChevronRight } from 'lucide-react'; // Icon for dropdown indicator
-import { useEffect, useState } from 'react'; // Import useState and useEffect
+import { ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { DynamicIcon } from './dynamic-icon';
 
-export function NavMain({ items = [] }: { items: NavItem[] }) {
+// Assume isCollapsed prop is passed down from AppSidebar
+export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[]; isCollapsed?: boolean }) {
     const page = usePage();
-    const [openItems, setOpenItems] = useState<Record<string, boolean>>({}); // State to track open collapsibles
+    const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
 
-    // Function to check if a child link is active
     const isChildActive = (children: NavItem[] | undefined): boolean => {
         return children?.some((child) => child.href === page.url) ?? false;
     };
 
-    // Function to toggle collapsible state
     const toggleItem = (title: string) => {
         setOpenItems((prev) => ({ ...prev, [title]: !prev[title] }));
     };
 
-    // Determine initial open state based on active child
     useEffect(() => {
         const initialOpenState: Record<string, boolean> = {};
         items.forEach((item) => {
-            if (isChildActive(item.children)) {
+            if (!isCollapsed && isChildActive(item.children)) {
+                // Only auto-open if not collapsed
                 initialOpenState[item.title] = true;
             }
         });
         setOpenItems(initialOpenState);
-    }, [items, page.url]);
+    }, [items, page.url, isCollapsed]); // Add isCollapsed dependency
 
     return (
         <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            {!isCollapsed && <SidebarGroupLabel>Platform</SidebarGroupLabel>}
             <SidebarMenu>
-                {items.map((item) =>
-                    item.children && item.children.length > 0 ? (
-                        // Render Collapsible if item has children
-                        <Collapsible
-                            key={item.title}
-                            open={openItems[item.title] || false}
-                            onOpenChange={() => toggleItem(item.title)}
-                            className="w-full"
-                        >
-                            <SidebarMenuItem className="p-0">
-                                <CollapsibleTrigger asChild>
-                                    {/* Use SidebarMenuButton for the trigger */}
-                                    <SidebarMenuButton
-                                        variant="default" // Adjust variant as needed
-                                        className="w-full justify-between pr-2" // Ensure button fills width
-                                        isActive={isChildActive(item.children)} // Highlight if child is active
-                                        tooltip={{ children: item.title }}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            {item.icon && <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} className="h-4 w-4" />}
-                                            <span>{item.title}</span>
-                                        </div>
-                                        <ChevronRight
-                                            className={`h-4 w-4 transition-transform duration-200 ${openItems[item.title] ? 'rotate-90' : ''}`}
-                                        />
-                                    </SidebarMenuButton>
-                                </CollapsibleTrigger>
-                            </SidebarMenuItem>
-                            <CollapsibleContent className="pl-6">
-                                {' '}
-                                {/* Indent child items */}
-                                <SidebarMenu className="py-1">
-                                    {item.children.map((child) => (
-                                        <SidebarMenuItem key={child.title}>
+                {items.map((item) => {
+                    const hasChildren = item.children && item.children.length > 0;
+
+                    if (hasChildren) {
+                        if (isCollapsed) {
+                            // --- Render DropdownMenu for collapsed state ---
+                            return (
+                                <DropdownMenu key={item.title}>
+                                    <DropdownMenuTrigger asChild>
+                                        <SidebarMenuItem className="p-0">
                                             <SidebarMenuButton
-                                                asChild
-                                                isActive={child.href === page.url}
-                                                size="sm" // Smaller size for child items
                                                 variant="default"
-                                                tooltip={{ children: child.title }}
+                                                className="w-full justify-center"
+                                                isActive={isChildActive(item.children)}
+                                                tooltip={{ children: item.title, side: 'right' }}
                                             >
-                                                <Link href={child.href} prefetch>
-                                                    {/* Optional: Add icon for child items too */}
-                                                    {/* {child.icon && <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />} */}
-                                                    <span>{child.title}</span>
-                                                </Link>
+                                                {/* Parent Icon Only */}
+                                                {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-5 w-5" />}
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
-                                    ))}
-                                </SidebarMenu>
-                            </CollapsibleContent>
-                        </Collapsible>
-                    ) : (
-                        // Render regular link if no children
-                        <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton asChild isActive={item.href === page.url} tooltip={{ children: item.title }}>
-                                <Link href={item.href} prefetch>
-                                    {item.icon && <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} className="h-4 w-4" />}
-                                    <span>{item.title}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ),
-                )}
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent side="right" align="start" className="ml-1">
+                                        <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {item.children!.map((child) => (
+                                            <DropdownMenuItem key={child.title} asChild className={page.url === child.href ? 'bg-accent' : ''}>
+                                                {/* Link with Child Icon and Text */}
+                                                <Link href={child.href} className="flex w-full items-center gap-2">
+                                                    {child.icon && <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />}
+                                                    <span>{child.title}</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            );
+                        } else {
+                            // --- Render Collapsible for expanded state ---
+                            return (
+                                <Collapsible
+                                    key={item.title}
+                                    open={openItems[item.title] || false}
+                                    onOpenChange={() => toggleItem(item.title)}
+                                    className="w-full"
+                                >
+                                    <SidebarMenuItem className="p-0">
+                                        <CollapsibleTrigger asChild>
+                                            <SidebarMenuButton
+                                                variant="default"
+                                                className="w-full justify-between pr-2"
+                                                isActive={isChildActive(item.children)}
+                                                tooltip={{ children: item.title }}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4" />}
+                                                    <span>{item.title}</span>
+                                                </div>
+                                                <ChevronRight
+                                                    className={`h-4 w-4 transition-transform duration-200 ${openItems[item.title] ? 'rotate-90' : ''}`}
+                                                />
+                                            </SidebarMenuButton>
+                                        </CollapsibleTrigger>
+                                    </SidebarMenuItem>
+                                    <CollapsibleContent className="pl-6">
+                                        <SidebarMenu className="py-1">
+                                            {item.children!.map((child) => (
+                                                <SidebarMenuItem key={child.title}>
+                                                    <SidebarMenuButton
+                                                        asChild
+                                                        isActive={child.href === page.url}
+                                                        size="sm"
+                                                        variant="default"
+                                                        tooltip={{ children: child.title }}
+                                                    >
+                                                        <Link href={child.href} prefetch className="flex items-center gap-2">
+                                                            {/* Child Icon */}
+                                                            {child.icon && (
+                                                                <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />
+                                                            )}
+                                                            <span>{child.title}</span>
+                                                        </Link>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            ))}
+                                        </SidebarMenu>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            );
+                        }
+                    } else {
+                        // --- Render simple link (handles collapsed state via SidebarMenuButton tooltip) ---
+                        return (
+                            <SidebarMenuItem key={item.title}>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={item.href === page.url}
+                                    tooltip={{ children: item.title, side: 'right' }} // Add side prop for tooltip when collapsed
+                                >
+                                    <Link href={item.href} prefetch className="flex items-center gap-2">
+                                        {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4" />}
+                                        {/* Text is automatically handled/hidden by parent Sidebar styles when collapsed */}
+                                        <span>{item.title}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        );
+                    }
+                })}
             </SidebarMenu>
         </SidebarGroup>
     );
