@@ -6,8 +6,13 @@ import { Link, usePage } from '@inertiajs/react';
 import AppLogo from './app-logo';
 
 export function AppSidebar() {
-    const { navigation } = usePage().props as any;
-    const { mainNavItems, footerNavItems } = navigation;
+    // Get navigation items from shared props
+    const { navigation, auth } = usePage().props as any;
+    const { mainNavItems, footerNavItems } = navigation || { mainNavItems: [], footerNavItems: [] };
+
+    console.log('User:', auth?.user);
+    console.log('Permissions:', auth?.permissions);
+    console.log('Navigation:', navigation);
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -24,11 +29,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={mainNavItems || []} />
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+                <NavFooter items={footerNavItems || []} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
