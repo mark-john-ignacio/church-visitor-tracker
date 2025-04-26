@@ -33,6 +33,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        //Log out from other devices
+        Auth::logoutOtherDevices($request->input('password'));
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
