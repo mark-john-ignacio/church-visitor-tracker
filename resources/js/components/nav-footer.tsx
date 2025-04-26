@@ -1,5 +1,6 @@
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
+import * as LucideIcons from 'lucide-react';
 import { type ComponentPropsWithoutRef } from 'react';
 import { DynamicIcon } from './dynamic-icon';
 
@@ -21,7 +22,8 @@ export function NavFooter({
                                 className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
                             >
                                 <a href={item.href} target="_blank" rel="noopener noreferrer">
-                                    {item.icon && <DynamicIcon name={item.icon} className="h-5 w-5" />}
+                                    {/* Pass item.icon directly as name */}
+                                    {item.icon && <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} />}
                                     <span>{item.title}</span>
                                 </a>
                             </SidebarMenuButton>

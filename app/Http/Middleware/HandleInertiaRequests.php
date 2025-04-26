@@ -43,7 +43,7 @@ class HandleInertiaRequests extends Middleware
         //Get main navigation items
         $mainNavItems = [];
         if($user){
-            $this->getNavItems($user, 'main');
+            $mainNavItems = $this->getNavItems($user, 'main');
         }
 
         $footerNavItems = $this->getNavItems($user, 'footer');
@@ -98,7 +98,7 @@ class HandleInertiaRequests extends Middleware
                 'href' => $item->route,
             ];
 
-            // Add the icon if it exist
+            // Add the icon if it exists
             if($item->icon){
                 $navItem['icon'] = $item->icon;
             }

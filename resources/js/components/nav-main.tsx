@@ -1,6 +1,7 @@
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import * as LucideIcons from 'lucide-react';
 import { DynamicIcon } from './dynamic-icon';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
@@ -13,7 +14,8 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild isActive={item.href === page.url} tooltip={{ children: item.title }}>
                             <Link href={item.href} prefetch>
-                                {item.icon && <DynamicIcon name={item.icon} />}
+                                {/* Pass item.icon directly as name */}
+                                {item.icon && <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} />}
                                 <span>{item.title}</span>
                             </Link>
                         </SidebarMenuButton>
