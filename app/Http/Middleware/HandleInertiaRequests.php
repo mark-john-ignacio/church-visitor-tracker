@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\MenuItem;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -47,20 +48,85 @@ class HandleInertiaRequests extends Middleware
 
         $footerNavItems = $this->getNavItems($user, 'footer');
 
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
+                'roles' => $user ? $user->roles->pluck('name') : [],
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
+            'navigation' => [
+              'mainNavItems' => $mainNavItems,
+              'footerNavItems' => $footerNavItems,
+            ],
             'sidebarOpen' => $request->cookie('sidebar_state') === 'true',
+
         ];
+    }
+
+    /**
+     * Get navigation items for a specific type filtered by user permissions
+     *
+     * @param \App\Models\User|null $user
+     * @param string $type
+     * @return array
+     */
+    protected function getNavItems($user, string $type):array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        $items = MenuItem::where('type', $type)
+            ->whereNull('parent_id')
+            ->orderBy('order')
+            ->get();
+
+        $navItems = [];
+
+        foreach ($items as $item){
+            if($item->permission_name && !$user->can($item->permission_name)){
+                continue;
+            }
+
+            $navItem = [
+                'title' => $item->name,
+                'href' => $item->route,
+            ];
+
+            // Add the icon if it exist
+            if($item->icon){
+                $navItem['icon'] = $item->icon;
+            }
+
+            //Process children if any
+            $children = $item->children()
+                ->orderBy('order')
+                ->get()
+                ->filter(function ($child) use ($user){
+                    return !$child->permission_name || $user->can($child->permission_name);
+                });
+            if ($children->count() > 0){
+                $navItem['children'] = $children->map(function ($child){
+                    $childItem = [
+                        'title' => $child->name,
+                        'href' => $child->route,
+                    ];
+
+                    if($child->icon){
+                        $childItem['icon'] = $child->icon;
+                    }
+
+                    return $childItem;
+                })->values()->toArray();
+            }
+            $navItems[] = $navItem;
+        }
+
+        return $navItems;
     }
 }
