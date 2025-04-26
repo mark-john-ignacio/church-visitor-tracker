@@ -1,4 +1,3 @@
-// filepath: c:\Users\Mark\Herd\myxfin-react-laravel\resources\js\components\nav-main.tsx
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     DropdownMenu,
@@ -7,7 +6,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'; // Import Dropdown components
+} from '@/components/ui/dropdown-menu';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -16,7 +15,6 @@ import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DynamicIcon } from './dynamic-icon';
 
-// Assume isCollapsed prop is passed down from AppSidebar
 export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[]; isCollapsed?: boolean }) {
     const page = usePage();
     const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
@@ -32,13 +30,13 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
     useEffect(() => {
         const initialOpenState: Record<string, boolean> = {};
         items.forEach((item) => {
+            // Auto-open if a child is active AND the sidebar is not collapsed
             if (!isCollapsed && isChildActive(item.children)) {
-                // Only auto-open if not collapsed
                 initialOpenState[item.title] = true;
             }
         });
         setOpenItems(initialOpenState);
-    }, [items, page.url, isCollapsed]); // Add isCollapsed dependency
+    }, [items, page.url, isCollapsed]);
 
     return (
         <SidebarGroup className="px-2 py-0">
@@ -50,6 +48,7 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                     if (hasChildren) {
                         if (isCollapsed) {
                             // --- Render DropdownMenu for collapsed state ---
+                            // ... (DropdownMenu implementation - should be correct) ...
                             return (
                                 <DropdownMenu key={item.title}>
                                     <DropdownMenuTrigger asChild>
@@ -60,7 +59,6 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                                 isActive={isChildActive(item.children)}
                                                 tooltip={{ children: item.title, side: 'right' }}
                                             >
-                                                {/* Parent Icon Only */}
                                                 {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-5 w-5" />}
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
@@ -70,7 +68,6 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                         <DropdownMenuSeparator />
                                         {item.children!.map((child) => (
                                             <DropdownMenuItem key={child.title} asChild className={page.url === child.href ? 'bg-accent' : ''}>
-                                                {/* Link with Child Icon and Text */}
                                                 <Link href={child.href} className="flex w-full items-center gap-2">
                                                     {child.icon && <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />}
                                                     <span>{child.title}</span>
@@ -86,62 +83,65 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                 <Collapsible
                                     key={item.title}
                                     open={openItems[item.title] || false}
-                                    onOpenChange={() => toggleItem(item.title)}
+                                    onOpenChange={() => toggleItem(item.title)} // Use the state toggle function
                                     className="w-full"
                                 >
                                     <SidebarMenuItem className="p-0">
                                         <CollapsibleTrigger asChild>
                                             <SidebarMenuButton
                                                 variant="default"
-                                                className="w-full justify-between pr-2" // Keep existing classes
+                                                className="w-full justify-between pr-2"
                                                 isActive={isChildActive(item.children)}
-                                                tooltip={{ children: item.title }} // Tooltip still useful for long text
+                                                tooltip={{ children: item.title }}
                                             >
-                                                {/* Use flex container to manage layout */}
                                                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                                                    {' '}
-                                                    {/* Added flex-1 and overflow-hidden */}
                                                     {item.icon && (
                                                         <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4 flex-shrink-0" />
-                                                    )}{' '}
-                                                    {/* Added flex-shrink-0 */}
-                                                    {/* Ensure span is visible and truncates if needed */}
-                                                    <span className="truncate whitespace-nowrap">
-                                                        {' '}
-                                                        {/* Added truncate and whitespace-nowrap */}
-                                                        {item.title}
-                                                    </span>
+                                                    )}
+                                                    <span className="truncate whitespace-nowrap">{item.title}</span>
                                                 </div>
                                                 <ChevronRight
                                                     className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${openItems[item.title] ? 'rotate-90' : ''}`}
-                                                />{' '}
-                                                {/* Added flex-shrink-0 */}
+                                                />
                                             </SidebarMenuButton>
                                         </CollapsibleTrigger>
                                     </SidebarMenuItem>
+                                    {/* **** Add this content back **** */}
                                     <CollapsibleContent className="pl-6">
-                                        {/* ... (CollapsibleContent implementation - unchanged) ... */}
+                                        <SidebarMenu className="py-1">
+                                            {item.children!.map((child) => (
+                                                <SidebarMenuItem key={child.title}>
+                                                    <SidebarMenuButton
+                                                        asChild
+                                                        isActive={child.href === page.url}
+                                                        size="sm"
+                                                        variant="default"
+                                                        tooltip={{ children: child.title }}
+                                                    >
+                                                        <Link href={child.href} prefetch className="flex items-center gap-2">
+                                                            {child.icon && (
+                                                                <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />
+                                                            )}
+                                                            <span>{child.title}</span>
+                                                        </Link>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            ))}
+                                        </SidebarMenu>
                                     </CollapsibleContent>
+                                    {/* **** End of added content **** */}
                                 </Collapsible>
                             );
                         }
                     } else {
-                        // --- Render simple link (handles collapsed state via SidebarMenuButton tooltip) ---
+                        // --- Render simple link ---
+                        // ... (Simple link implementation - should be correct) ...
                         return (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton asChild isActive={item.href === page.url} tooltip={{ children: item.title, side: 'right' }}>
                                     <Link href={item.href} prefetch className="flex flex-1 items-center gap-2 overflow-hidden">
-                                        {' '}
-                                        {/* Added flex-1 and overflow-hidden */}
-                                        {item.icon && (
-                                            <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4 flex-shrink-0" />
-                                        )}{' '}
-                                        {/* Added flex-shrink-0 */}
-                                        <span className="truncate whitespace-nowrap">
-                                            {' '}
-                                            {/* Added truncate and whitespace-nowrap */}
-                                            {item.title}
-                                        </span>
+                                        {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4 flex-shrink-0" />}
+                                        <span className="truncate whitespace-nowrap">{item.title}</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
