@@ -64,15 +64,18 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
 
             {/* Wrap content in a div similar to dashboard if needed for padding/layout */}
             {/* Adjust padding/gap as needed */}
-            <Button asChild size="sm" className="float-right -mt-8">
-                {/* Use route() helper */}
-                <Link href={route('admin.users.create')}>Create User</Link>
-            </Button>
+
             <div className="flex h-full flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>User Management</CardTitle>
                         <CardDescription>Manage application users and their roles.</CardDescription>
+                        <div className="flex justify-end gap-2">
+                            <Button asChild size="sm" className="float-right -mt-8">
+                                {/* Use route() helper */}
+                                <Link href={route('admin.users.create')}>Create User</Link>
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Table>

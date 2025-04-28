@@ -35,6 +35,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // ->middleware('can:manage_users') // Middleware check is now handled by authorize() in controller
     ->name('users.index');
     Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
 
 
 });
