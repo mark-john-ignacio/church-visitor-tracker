@@ -55,7 +55,7 @@ export function AppSidebar() {
             <SidebarFooter>
                 {/* Pass isCollapsed to NavFooter and NavUser */}
                 <NavFooter items={footerNavItems || []} className="mt-auto" isCollapsed={isCollapsed} />
-                <NavUser isCollapsed={isCollapsed} />
+                <NavUser />
             </SidebarFooter>
         </Sidebar>
     );
