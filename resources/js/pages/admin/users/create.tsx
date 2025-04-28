@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'; // Alternative for roles
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast'; // For feedback
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, PageProps } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm as useInertiaForm } from '@inertiajs/react'; // Renamed Inertia useForm
 import { useEffect } from 'react';
+import { useForm } from 'react-hook-form'; // Import useForm from react-hook-form
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 // Define breadcrumbs
@@ -41,8 +42,6 @@ const formSchema = z
     });
 
 export default function CreateUser({ auth, roles }: CreateUserPageProps) {
-    const { toast } = useToast();
-
     // Initialize react-hook-form
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -52,49 +51,57 @@ export default function CreateUser({ auth, roles }: CreateUserPageProps) {
             password: '',
             password_confirmation: '',
             roles: [], // Default to empty array
-        },
     });
 
     // Inertia useForm hook for submission
-    const { post, processing, errors, reset, wasSuccessful } = useForm({
+    const { data, setData, post, processing, errors, reset, wasSuccessful } = useInertiaForm({ // Use the renamed hook
         name: '',
         email: '',
+        password: '',
         password: '',
         password_confirmation: '',
         roles: [] as string[], // Ensure type is string array
     });
-
     // Sync react-hook-form state with Inertia form helper state
     useEffect(() => {
-        reset({
-            // Reset Inertia form helper state if react-hook-form changes
-            name: form.getValues('name'),
-            email: form.getValues('email'),
-            password: form.getValues('password'),
-            password_confirmation: form.getValues('password_confirmation'),
-            roles: form.getValues('roles'),
+        const subscription = form.watch((value) => {
+            // Update Inertia form data when react-hook-form changes
+            setData({
+                name: value.name ?? '',
+                email: value.email ?? '',
+                password: value.password ?? '',
+                password_confirmation: value.password_confirmation ?? '',
+                roles: value.roles ?? [],
+            });
         });
-    }, [form.watch()]); // Watch for changes in react-hook-form
+        return () => subscription.unsubscribe();
+    }, [form.watch, setData]); // Watch for changes in react-hook-form
 
+    // Update react-hook-form errors from Inertia errors
     // Update react-hook-form errors from Inertia errors
     useEffect(() => {
         if (errors.name) form.setError('name', { type: 'manual', message: errors.name });
         if (errors.email) form.setError('email', { type: 'manual', message: errors.email });
         if (errors.password) form.setError('password', { type: 'manual', message: errors.password });
-        if (errors.password_confirmation) form.setError('password_confirmation', { type: 'manual', message: errors.password_confirmation });
-        if (errors.roles) form.setError('roles', { type: 'manual', message: errors.roles });
-    }, [errors]);
-
     // Handle form submission
     function onSubmit(values: z.infer<typeof formSchema>) {
+        // Use the data managed by Inertia's useForm for submission
         post(route('admin.users.store'), {
             // POST to the store route (we'll create this next)
             onSuccess: () => {
-                toast({ title: 'User Created', description: 'The new user has been added successfully.' });
+                toast.success('User Created', {
+        post(route('admin.users.store'), {
+            // POST to the store route (we'll create this next)
+            onSuccess: () => {
+                toast.success('User Created', {
+                    description: 'The new user has been added successfully',
+                });
                 form.reset(); // Reset react-hook-form
             },
             onError: () => {
-                toast({ variant: 'destructive', title: 'Error', description: 'Failed to create user. Please check the form.' });
+                toast.error('Error', {
+                    description: errors.email || errors.name || errors.password || errors.roles || 'Failed to create user. Please check the form.',
+                });
             },
         });
     }

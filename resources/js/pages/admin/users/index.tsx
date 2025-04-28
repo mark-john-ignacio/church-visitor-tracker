@@ -70,6 +70,10 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                         <CardTitle>User Management</CardTitle>
                         <CardDescription>Manage application users and their roles.</CardDescription>
                     </CardHeader>
+                    <Button asChild size="sm" className="float-right -mt-8">
+                        {/* Use route() helper */}
+                        <Link href={route('admin.users.create')}>Create User</Link>
+                    </Button>
                     <CardContent>
                         <Table>
                             {/* Table Header and Body remain the same */}
