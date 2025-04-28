@@ -1,21 +1,19 @@
-// filepath: resources/js/pages/admin/users/create.tsx
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox'; // Alternative for roles
+import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, PageProps } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Head, router, useForm as useInertiaForm } from '@inertiajs/react'; // Renamed Inertia useForm
+import { Head, router, useForm as useInertiaForm } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form'; // Import useForm from react-hook-form
+import { useForm as useReactHookForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-// Define breadcrumbs
+// Define breadcrumbs (assuming route() is globally available)
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: route('dashboard') },
     { title: 'Admin', href: route('admin.index') },
     { title: 'Users', href: route('admin.users.index') },
     { title: 'Create', href: route('admin.users.create') },
@@ -33,76 +31,77 @@ const formSchema = z
         email: z.string().email({ message: 'Please enter a valid email address.' }),
         password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
         password_confirmation: z.string().min(8, { message: 'Password confirmation must be at least 8 characters.' }),
-        // Use array of strings for roles
         roles: z.array(z.string()).min(1, { message: 'Please select at least one role.' }),
     })
     .refine((data) => data.password === data.password_confirmation, {
         message: "Passwords don't match",
-        path: ['password_confirmation'], // path of error
+        path: ['password_confirmation'],
     });
 
 export default function CreateUser({ auth, roles }: CreateUserPageProps) {
-    // Initialize react-hook-form
-    const form = useForm<z.infer<typeof formSchema>>({
+    // Initialize react-hook-form for state management and validation
+    const form = useReactHookForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: '',
+            name: '', // Removed duplicate
             email: '',
             password: '',
             password_confirmation: '',
-            roles: [], // Default to empty array
+            roles: [],
+        },
     });
 
-    // Inertia useForm hook for submission
-    const { data, setData, post, processing, errors, reset, wasSuccessful } = useInertiaForm({ // Use the renamed hook
+    // Define the type for the form data based on the Zod schema
+    type FormData = z.infer<typeof formSchema>;
+
+    // Inertia useForm hook - primarily for processing state, errors, and post method
+    // Provide the FormData type to correctly type `errors`
+    const {
+        post,
+        processing,
+        errors,
+        reset: resetInertiaForm,
+    } = useInertiaForm<FormData>({
         name: '',
         email: '',
         password: '',
-        password: '',
         password_confirmation: '',
-        roles: [] as string[], // Ensure type is string array
-    });
-    // Sync react-hook-form state with Inertia form helper state
-    useEffect(() => {
-        const subscription = form.watch((value) => {
-            // Update Inertia form data when react-hook-form changes
-            setData({
-                name: value.name ?? '',
-                email: value.email ?? '',
-                password: value.password ?? '',
-                password_confirmation: value.password_confirmation ?? '',
-                roles: value.roles ?? [],
-            });
-        });
-        return () => subscription.unsubscribe();
-    }, [form.watch, setData]); // Watch for changes in react-hook-form
+        roles: [],
+    }); // Provide initial values matching FormData
 
-    // Update react-hook-form errors from Inertia errors
-    // Update react-hook-form errors from Inertia errors
+    // Update react-hook-form errors when Inertia returns validation errors
     useEffect(() => {
-        if (errors.name) form.setError('name', { type: 'manual', message: errors.name });
-        if (errors.email) form.setError('email', { type: 'manual', message: errors.email });
-        if (errors.password) form.setError('password', { type: 'manual', message: errors.password });
-    // Handle form submission
+        // Clear previous server errors first if desired
+        // form.clearErrors();
+
+        if (errors.name) form.setError('name', { type: 'server', message: errors.name });
+        if (errors.email) form.setError('email', { type: 'server', message: errors.email });
+        if (errors.password) form.setError('password', { type: 'server', message: errors.password });
+        if (errors.password_confirmation) form.setError('password_confirmation', { type: 'server', message: errors.password_confirmation });
+        if (errors.roles) form.setError('roles', { type: 'server', message: errors.roles });
+        // Add other fields if necessary
+    }, [errors, form.setError]); // Add form.setError to dependency array
+
+    // Handle form submission using react-hook-form's handleSubmit
     function onSubmit(values: z.infer<typeof formSchema>) {
-        // Use the data managed by Inertia's useForm for submission
+        // Pass the validated 'values' from react-hook-form directly to Inertia's post method
         post(route('admin.users.store'), {
-            // POST to the store route (we'll create this next)
+            ...values, // Spread the validated values from react-hook-form
             onSuccess: () => {
                 toast.success('User Created', {
-        post(route('admin.users.store'), {
-            // POST to the store route (we'll create this next)
-            onSuccess: () => {
-                toast.success('User Created', {
-                    description: 'The new user has been added successfully',
+                    description: 'The new user has been added successfully.',
                 });
-                form.reset(); // Reset react-hook-form
+                form.reset(); // Reset react-hook-form fields
+                // resetInertiaForm(); // Optionally reset Inertia form state (like errors)
             },
             onError: () => {
+                // Error messages are now set via the useEffect hook and shown by FormMessage
                 toast.error('Error', {
-                    description: errors.email || errors.name || errors.password || errors.roles || 'Failed to create user. Please check the form.',
+                    description: 'Failed to create user. Please check the form for errors.',
                 });
             },
+            // Preserve state/scroll as needed
+            preserveScroll: true,
         });
     }
 
@@ -117,6 +116,7 @@ export default function CreateUser({ auth, roles }: CreateUserPageProps) {
                     </CardHeader>
                     <CardContent>
                         <Form {...form}>
+                            {/* Pass react-hook-form's handleSubmit */}
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 {/* Name Field */}
                                 <FormField
@@ -128,7 +128,7 @@ export default function CreateUser({ auth, roles }: CreateUserPageProps) {
                                             <FormControl>
                                                 <Input placeholder="John Doe" {...field} />
                                             </FormControl>
-                                            <FormMessage />
+                                            <FormMessage /> {/* Displays validation errors */}
                                         </FormItem>
                                     )}
                                 />
@@ -174,8 +174,7 @@ export default function CreateUser({ auth, roles }: CreateUserPageProps) {
                                         </FormItem>
                                     )}
                                 />
-
-                                {/* Roles Field (using Checkboxes) */}
+                                {/* Roles Field */}
                                 <FormField
                                     control={form.control}
                                     name="roles"
@@ -185,47 +184,45 @@ export default function CreateUser({ auth, roles }: CreateUserPageProps) {
                                                 <FormLabel className="text-base">Roles</FormLabel>
                                                 <FormDescription>Assign roles to the user.</FormDescription>
                                             </div>
-                                            {Object.entries(roles).map(
-                                                (
-                                                    [id, name], // Use id from roles object
-                                                ) => (
-                                                    <FormField
-                                                        key={id}
-                                                        control={form.control}
-                                                        name="roles"
-                                                        render={({ field }) => {
-                                                            return (
-                                                                <FormItem key={id} className="mb-2 flex flex-row items-start space-y-0 space-x-3">
-                                                                    <FormControl>
-                                                                        <Checkbox
-                                                                            checked={field.value?.includes(name)} // Check if role name is included
-                                                                            onCheckedChange={(checked) => {
-                                                                                return checked
-                                                                                    ? field.onChange([...field.value, name]) // Add role name
-                                                                                    : field.onChange(
-                                                                                          field.value?.filter(
-                                                                                              (value) => value !== name, // Remove role name
-                                                                                          ),
-                                                                                      );
-                                                                            }}
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormLabel className="font-normal capitalize">{name}</FormLabel>
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-                                                ),
-                                            )}
-                                            <FormMessage />
+                                            {Object.entries(roles).map(([id, name]) => (
+                                                <FormField
+                                                    key={id}
+                                                    control={form.control}
+                                                    name="roles"
+                                                    render={({ field }) => (
+                                                        <FormItem key={id} className="mb-2 flex flex-row items-start space-y-0 space-x-3">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    // Check if the current role 'name' is in the array of selected roles
+                                                                    checked={field.value?.includes(name)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const currentRoles = field.value || [];
+                                                                        if (checked) {
+                                                                            // Add the role name if checked
+                                                                            field.onChange([...currentRoles, name]);
+                                                                        } else {
+                                                                            // Remove the role name if unchecked
+                                                                            field.onChange(currentRoles.filter((value) => value !== name));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal capitalize">{name}</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                            <FormMessage /> {/* Shows validation errors for the roles field */}
                                         </FormItem>
                                     )}
                                 />
 
+                                {/* Buttons */}
                                 <div className="flex justify-end gap-2">
                                     <Button type="button" variant="outline" onClick={() => router.visit(route('admin.users.index'))}>
                                         Cancel
                                     </Button>
+                                    {/* Disable button based on Inertia's processing state */}
                                     <Button type="submit" disabled={processing}>
                                         {processing ? 'Creating...' : 'Create User'}
                                     </Button>
