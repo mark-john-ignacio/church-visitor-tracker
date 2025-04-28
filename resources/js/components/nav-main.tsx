@@ -59,7 +59,9 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                                 isActive={isChildActive(item.children)}
                                                 tooltip={{ children: item.title, side: 'right' }}
                                             >
-                                                {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-5 w-5" />}
+                                                {item.icon && (
+                                                    <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} className="h-5 w-5" />
+                                                )}
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     </DropdownMenuTrigger>
@@ -69,7 +71,9 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                         {item.children!.map((child) => (
                                             <DropdownMenuItem key={child.title} asChild className={page.url === child.href ? 'bg-accent' : ''}>
                                                 <Link href={child.href} className="flex w-full items-center gap-2">
-                                                    {child.icon && <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />}
+                                                    {child.icon && (
+                                                        <DynamicIcon name={child.icon as unknown as keyof typeof LucideIcons} className="h-4 w-4" />
+                                                    )}
                                                     <span>{child.title}</span>
                                                 </Link>
                                             </DropdownMenuItem>
@@ -96,7 +100,10 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                             >
                                                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
                                                     {item.icon && (
-                                                        <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4 flex-shrink-0" />
+                                                        <DynamicIcon
+                                                            name={item.icon as unknown as keyof typeof LucideIcons}
+                                                            className="h-4 w-4 flex-shrink-0"
+                                                        />
                                                     )}
                                                     <span className="truncate whitespace-nowrap">{item.title}</span>
                                                 </div>
@@ -120,7 +127,10 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                                     >
                                                         <Link href={child.href} prefetch className="flex items-center gap-2">
                                                             {child.icon && (
-                                                                <DynamicIcon name={child.icon as keyof typeof LucideIcons} className="h-4 w-4" />
+                                                                <DynamicIcon
+                                                                    name={child.icon as unknown as keyof typeof LucideIcons}
+                                                                    className="h-4 w-4"
+                                                                />
                                                             )}
                                                             <span>{child.title}</span>
                                                         </Link>
@@ -140,7 +150,9 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton asChild isActive={item.href === page.url} tooltip={{ children: item.title, side: 'right' }}>
                                     <Link href={item.href} prefetch className="flex flex-1 items-center gap-2 overflow-hidden">
-                                        {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} className="h-4 w-4 flex-shrink-0" />}
+                                        {item.icon && (
+                                            <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} className="h-4 w-4 flex-shrink-0" />
+                                        )}
                                         <span className="truncate whitespace-nowrap">{item.title}</span>
                                     </Link>
                                 </SidebarMenuButton>
