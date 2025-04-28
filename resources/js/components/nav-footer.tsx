@@ -27,7 +27,7 @@ export function NavFooter({
                             >
                                 <a href={item.href} target="_blank" rel="noopener noreferrer">
                                     {/* Pass item.icon directly as name */}
-                                    {item.icon && <DynamicIcon name={item.icon as keyof typeof LucideIcons} />}
+                                    {item.icon && <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} />}
                                     {/* Span will be hidden automatically by Sidebar styles when collapsed */}
                                     <span>{item.title}</span>
                                 </a>
