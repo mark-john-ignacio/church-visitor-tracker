@@ -72,26 +72,34 @@ export default function EditUser({ auth, user, roles }: EditUserProps) {
 
     const onSubmit = form.handleSubmit((data) => {
         setProcessing(true);
-        const fd = new FormData();
-        fd.append('name', data.name);
-        fd.append('email', data.email);
-        if (data.password) {
-            fd.append('password', data.password);
-            fd.append('password_confirmation', data.password_confirmation!);
-        }
-        data.roles.forEach((r, i) => fd.append(`roles[${i}]`, r));
 
-        router.put(route('admin.users.update', { user: user.id }), fd, {
-            onSuccess: () => {
-                toast.success('User updated');
-                setErrors({});
+        // send a plain JS object → Inertia will JSON.stringify it
+        router.put(
+            route('admin.users.update', { user: user.id }),
+            {
+                name: data.name,
+                email: data.email,
+                // only include password fields if set
+                ...(data.password
+                    ? {
+                          password: data.password,
+                          password_confirmation: data.password_confirmation!,
+                      }
+                    : {}),
+                roles: data.roles,
             },
-            onError: (errs) => {
-                setErrors(errs);
-                toast.error('Error updating user');
+            {
+                onSuccess: () => {
+                    toast.success('User updated');
+                    setErrors({});
+                },
+                onError: (errs) => {
+                    setErrors(errs);
+                    toast.error('Error updating user');
+                },
+                onFinish: () => setProcessing(false),
             },
-            onFinish: () => setProcessing(false),
-        });
+        );
     });
 
     return (

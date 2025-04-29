@@ -94,7 +94,6 @@ class UserManagementController extends Controller
     {
         $this->authorize('manage_users', User::class);
 
-        dd($request->all());
         $data = $request->validate([
             'name'                  => ['required', 'string', 'min:2'],
             'email'                 => ['required', 'email', "unique:users,email,{$user->id}"],
