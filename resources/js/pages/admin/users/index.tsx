@@ -64,49 +64,88 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Roles</TableHead>
-                                    <TableHead>Joined</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {users.data.length > 0 ? (
-                                    users.data.map((user) => (
-                                        <TableRow key={user.id}>
-                                            <TableCell>{user.name}</TableCell>
-                                            <TableCell>{user.email}</TableCell>
-                                            <TableCell>
-                                                {user.roles?.map((role) => (
-                                                    <Badge key={role.name} variant="secondary" className="mr-1">
-                                                        {role.name}
-                                                    </Badge>
-                                                ))}
-                                            </TableCell>
-                                            <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="outline" size="sm" className="mr-2">
-                                                    Edit
-                                                </Button>
-                                                <Button variant="destructive" size="sm">
-                                                    Delete
-                                                </Button>
+                        {/* Desktop Table */}
+                        <div className="hidden overflow-x-auto sm:block">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Roles</TableHead>
+                                        <TableHead className="hidden md:table-cell">Joined</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {users.data.length > 0 ? (
+                                        users.data.map((user) => (
+                                            <TableRow key={user.id}>
+                                                <TableCell>{user.name}</TableCell>
+                                                <TableCell>{user.email}</TableCell>
+                                                <TableCell>
+                                                    {user.roles?.map((role) => (
+                                                        <Badge key={role.name} variant="secondary" className="mr-1">
+                                                            {role.name}
+                                                        </Badge>
+                                                    ))}
+                                                </TableCell>
+                                                <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button asChild variant="outline" size="sm" className="mr-2">
+                                                        <Link href={route('admin.users.edit', user.id)}>Edit</Link>
+                                                    </Button>
+                                                    <Button variant="destructive" size="sm">
+                                                        Delete
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center">
+                                                No users found.
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center">
-                                            No users found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Mobile List */}
+                        <div className="flex flex-col gap-4 sm:hidden">
+                            {users.data.map((user) => (
+                                <Card key={user.id} className="border">
+                                    <CardContent className="space-y-1">
+                                        <p>
+                                            <span className="font-semibold">Name:</span> {user.name}
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Email:</span> {user.email}
+                                        </p>
+                                        {user.roles?.length > 0 && (
+                                            <p className="flex flex-wrap gap-1">
+                                                {user.roles.map((r) => (
+                                                    <Badge key={r.name} variant="secondary">
+                                                        {r.name}
+                                                    </Badge>
+                                                ))}
+                                            </p>
+                                        )}
+                                        <p className="text-muted-foreground text-xs">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
+                                        <div className="flex justify-end gap-2">
+                                            <Button asChild size="sm" variant="outline">
+                                                <Link href={route('admin.users.edit', user.id)}>Edit</Link>
+                                            </Button>
+                                            <Button variant="destructive" size="sm">
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
                         <div className="mt-4 flex items-center justify-between">
                             <span className="text-muted-foreground text-sm">
                                 Showing {users.from ?? 0} to {users.to ?? 0} of {users.total} results

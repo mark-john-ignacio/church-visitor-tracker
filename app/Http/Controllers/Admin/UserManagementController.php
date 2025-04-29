@@ -1,79 +1,134 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Spatie\Permission\Models\Role;
-
 
 class UserManagementController extends Controller
 {
     use AuthorizesRequests;
+
     /**
-     * Display a listing of the resource.
+     * Display a listing of users.
      */
     public function index(Request $request): Response
     {
-        // Add authorization check
         $this->authorize('manage_users', User::class);
 
-        $users = User::with('roles') // Eager load roles
-                     ->latest()
-                     ->paginate(15) // Paginate results
-                     ->withQueryString(); // Append query string parameters to pagination links
+        $users = User::with('roles')
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
-        return Inertia::render('admin/users/index', [
-            'users' => $users,
-        ]);
+        return Inertia::render('admin/users/index', compact('users'));
     }
 
+    /**
+     * Show the form for creating a new user.
+     */
     public function create(): Response
     {
         $this->authorize('manage_users', User::class);
 
         $roles = Role::pluck('name', 'id');
 
-        return Inertia::render('admin/users/create', [
+        return Inertia::render('admin/users/create', compact('roles'));
+    }
+
+    /**
+     * Store a newly created user.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $this->authorize('manage_users', User::class);
+
+        $data = $request->validate([
+            'name'                  => ['required', 'string', 'max:255'],
+            'email'                 => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password'              => ['required', 'confirmed', Rules\Password::defaults()],
+            'roles'                 => ['required', 'array', 'min:1'],
+            'roles.*'               => ['required', 'string', 'exists:roles,name'],
+        ]);
+
+        $user = User::create([
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
+
+        $user->assignRole($data['roles']);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User created successfully.');
+    }
+
+    /**
+     * Show the form for editing the specified user.
+     */
+    public function edit(User $user): Response
+    {
+        $this->authorize('manage_users', User::class);
+
+        $roles = Role::pluck('name', 'id');
+
+        return Inertia::render('admin/users/edit', [
+            'user'  => $user->load('roles'),
             'roles' => $roles,
         ]);
     }
 
-    public function store(Request $request): RedirectResponse // Return a RedirectResponse
+    /**
+     * Update the specified user.
+     */
+    public function update(Request $request, User $user): RedirectResponse
     {
-        Log::info('User Store Request Data:', $request->all());
-        
-        // Authorize creation
         $this->authorize('manage_users', User::class);
 
-        // Validate the incoming request data
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:'.User::class, // Ensure email is unique in users table
-            'password' => ['required', 'confirmed', Rules\Password::defaults()], // Use default password rules
-            'roles' => 'required|array|min:1', // Ensure roles is an array and at least one is selected
-            'roles.*' => 'required|string|exists:roles,name', // Ensure each role exists in the roles table by name
+        dd($request->all());
+        $data = $request->validate([
+            'name'                  => ['required', 'string', 'min:2'],
+            'email'                 => ['required', 'email', "unique:users,email,{$user->id}"],
+            'password'              => ['nullable', 'confirmed', 'min:8'],
+            'roles'                 => ['required', 'array', 'min:1'],
+            'roles.*'               => ['required', 'string', 'exists:roles,name'],
         ]);
 
-        // Create the user
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']), // Hash the password
-        ]);
+        $user->name  = $data['name'];
+        $user->email = $data['email'];
 
-        // Assign the selected roles (using the names validated)
-        $user->assignRole($validated['roles']);
+        if (!empty($data['password'])) {
+            $user->password = Hash::make($data['password']);
+        }
 
-        // Redirect back to the user index page with a success message (optional)
-        // You can also flash session messages if preferred
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+        $user->save();
+        $user->syncRoles($data['roles']);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Remove the specified user.
+     */
+    public function destroy(User $user): RedirectResponse
+    {
+        $this->authorize('manage_users', User::class);
+
+        $user->delete();
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User deleted successfully.');
     }
 }

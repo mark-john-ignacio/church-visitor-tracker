@@ -14,7 +14,6 @@ import { z } from 'zod';
 
 // Define breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: route('dashboard') },
     { title: 'Admin', href: route('admin.index') },
     { title: 'Users', href: route('admin.users.index') },
     { title: 'Create', href: route('admin.users.create') },
