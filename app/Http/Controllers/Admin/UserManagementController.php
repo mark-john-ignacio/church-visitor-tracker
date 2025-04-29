@@ -6,11 +6,13 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Spatie\Permission\Models\Role;
+
 
 class UserManagementController extends Controller
 {
@@ -46,6 +48,8 @@ class UserManagementController extends Controller
 
     public function store(Request $request): RedirectResponse // Return a RedirectResponse
     {
+        Log::info('User Store Request Data:', $request->all());
+        
         // Authorize creation
         $this->authorize('manage_users', User::class);
 
