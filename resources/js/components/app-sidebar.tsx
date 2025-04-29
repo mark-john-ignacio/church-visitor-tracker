@@ -16,15 +16,10 @@ import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
 export function AppSidebar() {
-    // Get navigation items from shared props
-    const { navigation, auth } = usePage().props as any;
-    const { mainNavItems, footerNavItems } = navigation || { mainNavItems: [], footerNavItems: [] };
+    const { navigation } = usePage().props as any;
+    const { mainNavItems = [], footerNavItems = [] } = navigation;
     const { state } = useSidebar();
     const isCollapsed = state === 'collapsed';
-
-    // console.log('User:', auth?.user);
-    // console.log('Permissions:', auth?.permissions);
-    // console.log('Navigation:', navigation);
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -33,7 +28,6 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/dashboard" prefetch>
-                                {/* Conditionally render logo */}
                                 {isCollapsed ? (
                                     <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-md">
                                         <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
@@ -48,13 +42,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {/* Pass isCollapsed to NavMain */}
-                <NavMain items={mainNavItems || []} isCollapsed={isCollapsed} />
+                <NavMain items={mainNavItems} isCollapsed={isCollapsed} />
             </SidebarContent>
 
             <SidebarFooter>
-                {/* Pass isCollapsed to NavFooter and NavUser */}
-                <NavFooter items={footerNavItems || []} className="mt-auto" isCollapsed={isCollapsed} />
+                <NavFooter items={footerNavItems} isCollapsed={isCollapsed} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

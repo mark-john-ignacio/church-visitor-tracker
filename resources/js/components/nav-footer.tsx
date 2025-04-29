@@ -4,17 +4,14 @@ import * as LucideIcons from 'lucide-react';
 import { type ComponentPropsWithoutRef } from 'react';
 import { DynamicIcon } from './dynamic-icon';
 
-export function NavFooter({
-    items,
-    className,
-    isCollapsed, // Destructure isCollapsed here
-    ...props
-}: ComponentPropsWithoutRef<typeof SidebarGroup> & {
+interface NavFooterProps extends ComponentPropsWithoutRef<typeof SidebarGroup> {
     items: NavItem[];
-    isCollapsed?: boolean; // Add isCollapsed to the type definition
-}) {
+    isCollapsed?: boolean;
+}
+
+export function NavFooter({ items, isCollapsed = false, className = '', ...props }: NavFooterProps) {
     return (
-        <SidebarGroup {...props} className={`group-data-[collapsible=icon]:p-0 ${className || ''}`}>
+        <SidebarGroup {...props} className={`group-data-[collapsible=icon]:p-0 ${className}`}>
             <SidebarGroupContent>
                 <SidebarMenu>
                     {items.map((item) => (
@@ -22,13 +19,10 @@ export function NavFooter({
                             <SidebarMenuButton
                                 asChild
                                 className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
-                                // Add tooltip for collapsed state
                                 tooltip={isCollapsed ? { children: item.title, side: 'right' } : undefined}
                             >
                                 <a href={item.href} target="_blank" rel="noopener noreferrer">
-                                    {/* Pass item.icon directly as name */}
                                     {item.icon && <DynamicIcon name={item.icon as unknown as keyof typeof LucideIcons} />}
-                                    {/* Span will be hidden automatically by Sidebar styles when collapsed */}
                                     <span>{item.title}</span>
                                 </a>
                             </SidebarMenuButton>
