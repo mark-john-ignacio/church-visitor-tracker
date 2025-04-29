@@ -42,7 +42,7 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
             {!isCollapsed && <SidebarGroupLabel>Platform</SidebarGroupLabel>}
             <SidebarMenu>
                 {items.map((item) => {
-                    const hasChildren = item.children?.length > 0;
+                    const hasChildren = (item.children?.length ?? 0) > 0;
 
                     if (hasChildren) {
                         if (collapsedNav) {
