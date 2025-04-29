@@ -8,6 +8,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import * as LucideIcons from 'lucide-react';
@@ -17,6 +18,9 @@ import { DynamicIcon } from './dynamic-icon';
 
 export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[]; isCollapsed?: boolean }) {
     const page = usePage();
+    const isMobile = useIsMobile();
+    const collapsedNav = isCollapsed && !isMobile;
+
     const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
 
     const isChildActive = (children?: NavItem[]) => children?.some((child) => child.href === page.url) ?? false;
@@ -29,7 +33,7 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
             }
         });
         setOpenItems(stateMap);
-    }, [items, page.url, isCollapsed]);
+    }, [items, page.url, collapsedNav]);
 
     const toggleItem = (title: string) => setOpenItems((prev) => ({ ...prev, [title]: !prev[title] }));
 
@@ -41,7 +45,7 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                     const hasChildren = item.children?.length > 0;
 
                     if (hasChildren) {
-                        if (isCollapsed) {
+                        if (collapsedNav) {
                             return (
                                 <DropdownMenu key={item.title}>
                                     <DropdownMenuTrigger asChild>
