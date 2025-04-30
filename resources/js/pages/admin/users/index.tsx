@@ -122,9 +122,9 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                                         <p>
                                             <span className="font-semibold">Email:</span> {user.email}
                                         </p>
-                                        {user.roles?.length > 0 && (
+                                        {(user.roles?.length ?? 0) > 0 && (
                                             <p className="flex flex-wrap gap-1">
-                                                {user.roles.map((r) => (
+                                                {user.roles!.map((r) => (
                                                     <Badge key={r.name} variant="secondary">
                                                         {r.name}
                                                     </Badge>
