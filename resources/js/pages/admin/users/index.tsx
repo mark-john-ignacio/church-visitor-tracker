@@ -34,14 +34,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
-    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
-    const success = flash?.success;
-    const error = flash?.error;
-
+    const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
     useEffect(() => {
-        if (success) toast.success(success);
-        if (error) toast.error(error);
-    }, [success, error]);
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
+
     if (!users || !users.data) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
