@@ -1,11 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PageProps, User } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface UsersPageProps extends PageProps {
@@ -20,6 +21,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
     const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
     const { success, error } = flash ?? {};
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [toDelete, setToDelete] = useState<User | null>(null);
 
     useEffect(() => {
         if (success) toast.success(success);
@@ -40,14 +44,14 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
 
             <div className="p-4 md:p-8">
                 <Card>
-                    <CardHeader className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>User Management</CardTitle>
-                            <CardDescription>Manage application users and their roles.</CardDescription>
+                    <CardHeader>
+                        <CardTitle>User Management</CardTitle>
+                        <CardDescription>Manage application users and their roles.</CardDescription>
+                        <div className="flex justify-end gap-2">
+                            <Button asChild size="sm">
+                                <Link href={route('admin.users.create')}>Create User</Link>
+                            </Button>
                         </div>
-                        <Button asChild size="sm">
-                            <Link href={route('admin.users.create')}>Create User</Link>
-                        </Button>
                     </CardHeader>
 
                     <CardContent className="space-y-6">
@@ -88,7 +92,14 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                                                 <Button asChild variant="outline" size="sm" className="mr-2">
                                                     <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                                 </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id)}>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setToDelete(user);
+                                                        setConfirmOpen(true);
+                                                    }}
+                                                >
                                                     Delete
                                                 </Button>
                                             </TableCell>
@@ -152,6 +163,32 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Confirmation Dialog */}
+            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Deletion</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <strong>{toDelete?.name}</strong>? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                if (toDelete) handleDelete(toDelete.id);
+                                setConfirmOpen(false);
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
