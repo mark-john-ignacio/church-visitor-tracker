@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, PageProps, User } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface LaravelPaginator<T> {
     current_page: number;
@@ -27,11 +29,19 @@ interface UsersPageProps extends PageProps {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Admin', href: route('admin.index') },
+    { title: 'Admin', href: '#' },
     { title: 'Users', href: route('admin.users.index') },
 ];
 
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
+    const success = flash?.success;
+    const error = flash?.error;
+
+    useEffect(() => {
+        if (success) toast.success(success);
+        if (error) toast.error(error);
+    }, [success, error]);
     if (!users || !users.data) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>

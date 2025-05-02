@@ -4,11 +4,16 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\UserManagementController;
 
+Route::get('/', function () {
+    return Inertia::render('welcome');
+})->name('home');
+
+// Dashboard
+Route::get('dashboard', fn () => Inertia::render('dashboard'))
+    ->middleware('can:view_admin')
+    ->name('dashboard');
+
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
-    Route::get('dashboard', fn () => Inertia::render('dashboard'))
-        ->middleware('can:view_admin')
-        ->name('index');
 
     // Users
     Route::get('/users', [UserManagementController::class, 'index'])
