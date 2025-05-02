@@ -36,6 +36,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     ->middleware('can:manage_users')
     ->name('users.update');
 
+    Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])
+        ->middleware('can:manage_users')  
+        ->name('users.destroy');
+
     // Roles
     Route::get('/roles', fn () => Inertia::render('admin/roles/index'))
         ->middleware('can:manage_roles')

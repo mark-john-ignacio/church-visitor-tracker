@@ -3,26 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, PageProps, User } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { BreadcrumbItem, LaravelPaginator, PageProps, User } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-
-interface LaravelPaginator<T> {
-    current_page: number;
-    data: T[];
-    first_page_url: string | null;
-    from: number | null;
-    last_page: number;
-    last_page_url: string | null;
-    links: { url: string | null; label: string; active: boolean }[];
-    next_page_url: string | null;
-    path: string;
-    per_page: number;
-    prev_page_url: string | null;
-    to: number | null;
-    total: number;
-}
 
 interface UsersPageProps extends PageProps {
     users: LaravelPaginator<User>;
@@ -35,44 +19,39 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
     const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
-    useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
+    const { success, error } = flash ?? {};
 
-    if (!users || !users.data) {
-        return (
-            <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title="User Management" />
-                <Card>
-                    <CardHeader>
-                        <CardTitle>User Management</CardTitle>
-                        <CardDescription>Manage application users and their roles.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p>Loading users or no users found...</p>
-                    </CardContent>
-                </Card>
-            </AppLayout>
-        );
-    }
+    useEffect(() => {
+        if (success) toast.success(success);
+        if (error) toast.error(error);
+    }, [success, error]);
+
+    const handleDelete = useCallback((id: number) => {
+        router.delete(route('admin.users.destroy', id), {
+            preserveScroll: true,
+            onSuccess: () => toast.success('User deleted'),
+            onError: () => toast.error('Delete failed'),
+        });
+    }, []);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="User Management" />
-            <div className="flex h-full flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+
+            <div className="p-4 md:p-8">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>User Management</CardTitle>
-                        <CardDescription>Manage application users and their roles.</CardDescription>
-                        <div className="flex justify-end gap-2">
-                            <Button asChild size="sm">
-                                <Link href={route('admin.users.create')}>Create User</Link>
-                            </Button>
+                    <CardHeader className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>User Management</CardTitle>
+                            <CardDescription>Manage application users and their roles.</CardDescription>
                         </div>
+                        <Button asChild size="sm">
+                            <Link href={route('admin.users.create')}>Create User</Link>
+                        </Button>
                     </CardHeader>
-                    <CardContent>
-                        {/* Desktop Table */}
+
+                    <CardContent className="space-y-6">
+                        {/* Desktop */}
                         <div className="hidden overflow-x-auto sm:block">
                             <Table>
                                 <TableHeader>
@@ -85,41 +64,41 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {users.data.length > 0 ? (
-                                        users.data.map((user) => (
-                                            <TableRow key={user.id}>
-                                                <TableCell>{user.name}</TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell>
-                                                    {user.roles?.map((role) => (
-                                                        <Badge key={role.name} variant="secondary" className="mr-1">
-                                                            {role.name}
-                                                        </Badge>
-                                                    ))}
-                                                </TableCell>
-                                                <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button asChild variant="outline" size="sm" className="mr-2">
-                                                        <Link href={route('admin.users.edit', user.id)}>Edit</Link>
-                                                    </Button>
-                                                    <Button variant="destructive" size="sm">
-                                                        Delete
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
+                                    {users.data.length === 0 && (
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-center">
                                                 No users found.
                                             </TableCell>
                                         </TableRow>
                                     )}
+
+                                    {users.data.map((user) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell>{user.name}</TableCell>
+                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell>
+                                                {user.roles?.map((r) => (
+                                                    <Badge key={r.name} variant="secondary" className="mr-1">
+                                                        {r.name}
+                                                    </Badge>
+                                                ))}
+                                            </TableCell>
+                                            <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button asChild variant="outline" size="sm" className="mr-2">
+                                                    <Link href={route('admin.users.edit', user.id)}>Edit</Link>
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id)}>
+                                                    Delete
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                                 </TableBody>
                             </Table>
                         </div>
 
-                        {/* Mobile List */}
+                        {/* Mobile */}
                         <div className="flex flex-col gap-4 sm:hidden">
                             {users.data.map((user) => (
                                 <Card key={user.id} className="border">
@@ -130,9 +109,9 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                                         <p>
                                             <span className="font-semibold">Email:</span> {user.email}
                                         </p>
-                                        {(user.roles?.length ?? 0) > 0 && (
+                                        {user.roles?.length > 0 && (
                                             <p className="flex flex-wrap gap-1">
-                                                {user.roles!.map((r) => (
+                                                {user.roles.map((r) => (
                                                     <Badge key={r.name} variant="secondary">
                                                         {r.name}
                                                     </Badge>
@@ -144,7 +123,7 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                                             <Button asChild size="sm" variant="outline">
                                                 <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                             </Button>
-                                            <Button variant="destructive" size="sm">
+                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id)}>
                                                 Delete
                                             </Button>
                                         </div>
@@ -156,16 +135,16 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                         {/* Pagination */}
                         <div className="mt-4 flex items-center justify-between">
                             <span className="text-muted-foreground text-sm">
-                                Showing {users.from ?? 0} to {users.to ?? 0} of {users.total} results
+                                Showing {users.from ?? 0}–{users.to ?? 0} of {users.total}
                             </span>
                             <div className="flex gap-1">
-                                {users.links.map((link, index) =>
-                                    link.url ? (
-                                        <Button key={index} asChild size="sm" variant={link.active ? 'default' : 'outline'} disabled={!link.url}>
-                                            <Link href={link.url} dangerouslySetInnerHTML={{ __html: link.label }} preserveScroll preserveState />
+                                {users.links.map((l, i) =>
+                                    l.url ? (
+                                        <Button key={i} asChild size="sm" variant={l.active ? 'default' : 'outline'}>
+                                            <Link href={l.url} preserveScroll preserveState dangerouslySetInnerHTML={{ __html: l.label }} />
                                         </Button>
                                     ) : (
-                                        <Button key={index} size="sm" variant="outline" disabled dangerouslySetInnerHTML={{ __html: link.label }} />
+                                        <Button key={i} size="sm" variant="outline" disabled dangerouslySetInnerHTML={{ __html: l.label }} />
                                     ),
                                 )}
                             </div>
