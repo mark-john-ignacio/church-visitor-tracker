@@ -1,4 +1,4 @@
-import { CrudIndex } from '@/components/CrudIndex';
+import { CrudIndex } from '@/components/CRUD-index';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
