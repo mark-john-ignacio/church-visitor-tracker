@@ -13,42 +13,13 @@ Route::get('dashboard', fn () => Inertia::render('dashboard'))
     ->middleware('can:view_admin')
     ->name('dashboard');
 
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
-
-    // Users
-    Route::get('/users', [UserManagementController::class, 'index'])
-        ->middleware('can:manage_users')     
-        ->name('users.index');
-
-    Route::get('/users/create', [UserManagementController::class, 'create'])
-        ->middleware('can:manage_users')   
-        ->name('users.create');
-
-    Route::post('/users', [UserManagementController::class, 'store'])
-        ->middleware('can:manage_users')  
-        ->name('users.store');
-
-    Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])
-        ->middleware('can:manage_users')  
-        ->name('users.edit');
-
-    Route::put('/users/{user}', [UserManagementController::class, 'update'])
-    ->middleware('can:manage_users')
-    ->name('users.update');
-
-    Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])
-        ->middleware('can:manage_users')  
-        ->name('users.destroy');
-
-    // Roles
-    Route::get('/roles', fn () => Inertia::render('admin/roles/index'))
-        ->middleware('can:manage_roles')
-        ->name('roles.index');
-
-    // Navigation
-    Route::get('/navigation', fn () => Inertia::render('admin/navigation/index'))
-        ->middleware('can:manage_navigation')
-        ->name('navigation.index');
+Route::middleware(['auth','verified','can:manage_users,' . App\Models\User::class])
+->prefix('admin')
+->name('admin.')
+->group(function(){
+    Route::resource('users', UserManagementController::class)
+            ->except(['show']);
+    // …other admin resources
 });
 
 require __DIR__.'/settings.php';
