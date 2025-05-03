@@ -134,7 +134,14 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                                             <Button asChild size="sm" variant="outline">
                                                 <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                             </Button>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id)}>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setToDelete(user);
+                                                    setConfirmOpen(true);
+                                                }}
+                                            >
                                                 Delete
                                             </Button>
                                         </div>
