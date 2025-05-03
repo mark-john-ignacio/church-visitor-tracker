@@ -24,15 +24,17 @@ export default function EditUser({ user, roles }: { user: any; roles: Record<str
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit User" />
-            <Card>
-                <CardHeader>
-                    <CardTitle>Edit User</CardTitle>
-                    <CardDescription>Update user details.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <UserForm defaultValues={defaultValues} roles={roles} url={route('admin.users.update', { user: user.id })} method="put" />
-                </CardContent>
-            </Card>
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Edit User</CardTitle>
+                        <CardDescription>Update user details.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <UserForm defaultValues={defaultValues} roles={roles} url={route('admin.users.update', { user: user.id })} method="put" />
+                    </CardContent>
+                </Card>
+            </div>
         </AppLayout>
     );
 }

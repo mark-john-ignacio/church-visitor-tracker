@@ -15,15 +15,17 @@ export default function CreateUser({ roles }: { roles: Record<string, string> })
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create User" />
-            <Card>
-                <CardHeader>
-                    <CardTitle>Create User</CardTitle>
-                    <CardDescription>Fill out the form below.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <UserForm defaultValues={defaultValues} roles={roles} url={route('admin.users.store')} method="post" />
-                </CardContent>
-            </Card>
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Create User</CardTitle>
+                        <CardDescription>Fill out the form below.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <UserForm defaultValues={defaultValues} roles={roles} url={route('admin.users.store')} method="post" />
+                    </CardContent>
+                </Card>
+            </div>
         </AppLayout>
     );
 }

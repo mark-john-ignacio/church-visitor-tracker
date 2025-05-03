@@ -1,8 +1,11 @@
-import { Button, Checkbox, Input } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { useEffect } from 'react';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { FormData, schema } from './schema';
 
@@ -78,17 +81,32 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props
                 {/* Roles */}
                 <FormItem>
                     <FormLabel>Roles</FormLabel>
-                    {Object.entries(roles).map(([id, name]) => (
-                        <label key={id} className="flex items-center space-x-2">
-                            <Checkbox {...form.register('roles')} value={name} />
-                            <span>{name}</span>
-                        </label>
-                    ))}
+                    <Controller
+                        control={form.control}
+                        name="roles"
+                        render={({ field }) =>
+                            Object.entries(roles).map(([id, name]) => (
+                                <label key={id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        checked={field.value.includes(name)}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                field.onChange([...field.value, name]);
+                                            } else {
+                                                field.onChange(field.value.filter((v) => v !== name));
+                                            }
+                                        }}
+                                    />
+                                    <span>{name}</span>
+                                </label>
+                            ))
+                        }
+                    />
                     <FormMessage>{form.formState.errors.roles?.message}</FormMessage>
                 </FormItem>
 
                 <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => router.visit(route('admin.users.index'))}>
+                    <Button type="button" variant="outline" onClick={() => router.visit(route('admin.users.index'))}>
                         Cancel
                     </Button>
                     <Button type="submit">Save</Button>
