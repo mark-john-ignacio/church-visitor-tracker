@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import useFlashToast from '@/hooks/use-flash-toast';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PageProps, User } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useCallback, useMemo } from 'react';
+import { toast } from 'sonner';
 
 interface UsersPageProps extends PageProps {
     users: LaravelPaginator<User>;
@@ -16,8 +18,76 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Users', href: route('admin.users.index') },
 ];
 
+// Extract columns for better type inference and readability
+const userColumns = [
+    { label: 'Name', key: 'name' },
+    { label: 'Email', key: 'email' },
+    {
+        label: 'Roles',
+        key: 'roles',
+        render: (u: User) =>
+            u.roles.map((r) => (
+                <Badge key={r.name} variant="secondary" className="mr-1">
+                    {r.name}
+                </Badge>
+            )),
+    },
+    {
+        label: 'Joined',
+        key: 'created_at',
+        render: (u: User) => new Date(u.created_at).toLocaleDateString(),
+    },
+]; // Use 'as const' to preserve literal types
+
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
     useFlashToast();
+
+    // Add a delete handler that can be passed to both CrudIndex and the mobile view
+    const handleDelete = useCallback((id: number) => {
+        router.delete(route('admin.users.destroy', id), {
+            onSuccess: () => toast.success('User deleted successfully'),
+            onError: () => toast.error('Error deleting user'),
+        });
+    }, []);
+
+    // Use memoization for the renderMobile function to prevent unnecessary re-renders
+    const renderMobile = useMemo(
+        () => (rows: User[]) =>
+            rows.map((u) => (
+                <Card key={u.id} className="border">
+                    <CardContent className="space-y-1">
+                        <p>
+                            <strong>Name:</strong> {u.name}
+                        </p>
+                        <p>
+                            <strong>Email:</strong> {u.email}
+                        </p>
+                        {u.roles.length > 0 && (
+                            <p className="flex flex-wrap gap-1">
+                                {u.roles.map((r) => (
+                                    <Badge key={r.name}>{r.name}</Badge>
+                                ))}
+                            </p>
+                        )}
+                        <p className="text-muted-foreground text-xs">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
+                        <div className="flex justify-end gap-2">
+                            <Button asChild size="sm" variant="outline">
+                                <Link href={route('admin.users.edit', u.id)}>Edit</Link>
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDelete(u.id)} // Use the real delete handler
+                                aria-label={`Delete user ${u.name}`} // Add accessibility label
+                            >
+                                Delete
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )),
+        [],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -39,61 +109,9 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                         <CrudIndex
                             resource="users"
                             rows={users.data}
-                            columns={[
-                                { label: 'Name', key: 'name' },
-                                { label: 'Email', key: 'email' },
-                                {
-                                    label: 'Roles',
-                                    key: 'roles',
-                                    render: (u: User) =>
-                                        u.roles.map((r) => (
-                                            <Badge key={r.name} variant="secondary" className="mr-1">
-                                                {r.name}
-                                            </Badge>
-                                        )),
-                                },
-                                {
-                                    label: 'Joined',
-                                    key: 'created_at',
-                                    render: (u: User) => new Date(u.created_at).toLocaleDateString(),
-                                },
-                            ]}
-                            renderMobile={(rows) =>
-                                rows.map((u) => (
-                                    <Card key={u.id} className="border">
-                                        <CardContent className="space-y-1">
-                                            <p>
-                                                <strong>Name:</strong> {u.name}
-                                            </p>
-                                            <p>
-                                                <strong>Email:</strong> {u.email}
-                                            </p>
-                                            {u.roles.length > 0 && (
-                                                <p className="flex flex-wrap gap-1">
-                                                    {u.roles.map((r) => (
-                                                        <Badge key={r.name}>{r.name}</Badge>
-                                                    ))}
-                                                </p>
-                                            )}
-                                            <p className="text-muted-foreground text-xs">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
-                                            <div className="flex justify-end gap-2">
-                                                <Button asChild size="sm" variant="outline">
-                                                    <Link href={route('admin.users.edit', u.id)}>Edit</Link>
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        /* noop: handled by CrudIndex */
-                                                    }}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))
-                            }
+                            columns={userColumns}
+                            renderMobile={renderMobile}
+                            onDelete={handleDelete} // Pass the delete handler to CrudIndex
                         />
 
                         {/* Pagination */}

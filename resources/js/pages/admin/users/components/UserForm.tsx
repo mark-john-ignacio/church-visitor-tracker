@@ -80,29 +80,36 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props
 
                 {/* Roles */}
                 <FormItem>
-                    <FormLabel>Roles</FormLabel>
-                    <Controller
-                        control={form.control}
-                        name="roles"
-                        render={({ field }) =>
-                            Object.entries(roles).map(([id, name]) => (
-                                <label key={id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        checked={field.value.includes(name)}
-                                        onCheckedChange={(checked) => {
-                                            if (checked) {
-                                                field.onChange([...field.value, name]);
-                                            } else {
-                                                field.onChange(field.value.filter((v) => v !== name));
-                                            }
-                                        }}
-                                    />
-                                    <span>{name}</span>
-                                </label>
-                            ))
-                        }
-                    />
-                    <FormMessage>{form.formState.errors.roles?.message}</FormMessage>
+                    <fieldset>
+                        <FormLabel as="legend">Roles</FormLabel>
+                        <FormControl>
+                            <Controller
+                                control={form.control}
+                                name="roles"
+                                render={({ field }) => (
+                                    <div className="space-y-2" role="group" aria-labelledby="roles-label">
+                                        {Object.entries(roles).map(([id, name]) => (
+                                            <label key={id} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    checked={field.value.includes(name)}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            field.onChange([...field.value, name]);
+                                                        } else {
+                                                            field.onChange(field.value.filter((v) => v !== name));
+                                                        }
+                                                    }}
+                                                    aria-invalid={!!form.formState.errors.roles}
+                                                />
+                                                <span>{name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            />
+                        </FormControl>
+                        <FormMessage>{form.formState.errors.roles?.message}</FormMessage>
+                    </fieldset>
                 </FormItem>
 
                 <div className="flex justify-end gap-2">

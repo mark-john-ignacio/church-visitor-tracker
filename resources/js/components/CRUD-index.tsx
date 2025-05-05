@@ -1,28 +1,42 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
+export type Column<T> = {
+    label: string;
+    key: Extract<keyof T, string | number>;
+    render?: (row: T) => React.ReactNode;
+};
 export function CrudIndex<T extends { id: number }>(props: {
     rows: T[];
-    columns: Array<{ label: string; key: keyof T; render?: (r: T) => React.ReactNode }>;
+    columns: Column<T>[];
     resource: string;
     renderMobile?: (rows: T[]) => React.ReactNode;
+    onDelete?: (id: number) => void;
 }) {
-    const { rows, columns, resource, renderMobile } = props;
+    const { rows, columns, resource, renderMobile, onDelete } = props;
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [toDelete, setToDelete] = useState<T | null>(null);
 
     const handleDelete = useCallback(
         (id: number) => {
+            if (onDelete) {
+                onDelete(id);
+                setConfirmOpen(false);
+                return;
+            }
             router.delete(route(`admin.${resource}.destroy`, id), {
-                onSuccess: () => toast.success('Deleted'),
+                onSuccess: () => {
+                    toast.success('Deleted');
+                    setConfirmOpen(false);
+                },
                 onError: () => toast.error('Error deleting'),
             });
         },
-        [resource],
+        [resource, onDelete],
     );
     return (
         <>
@@ -31,41 +45,55 @@ export function CrudIndex<T extends { id: number }>(props: {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            {columns.map((c, i) => (
-                                <TableHead key={i}>{c.label}</TableHead>
+                            {columns.map((c) => (
+                                <TableHead key={c.key}>{c.label}</TableHead>
                             ))}
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {rows.map((r) => (
-                            <TableRow key={r.id}>
-                                {columns.map((c, i) => (
-                                    <TableCell key={i}>{c.render ? c.render(r) : (r[c.key] as any)}</TableCell>
-                                ))}
-                                <TableCell className="text-right">
-                                    <Button size="sm" className="mr-2" variant="outline" asChild>
-                                        <a href={route(`admin.${resource}.edit`, r.id)}>Edit</a>
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={() => {
-                                            setToDelete(r);
-                                            setConfirmOpen(true);
-                                        }}
-                                    >
-                                        Delete
-                                    </Button>
+                        {rows.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={columns.length + 1} className="text-muted-foreground py-6 text-center">
+                                    No records found.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            rows.map((r) => (
+                                <TableRow key={r.id}>
+                                    {columns.map((c) => (
+                                        <TableCell key={`${r.id}-${String(c.key)}`}>{c.render ? c.render(r) : (r[c.key] as any)}</TableCell>
+                                    ))}
+                                    <TableCell className="text-right">
+                                        <Button size="sm" className="mr-2" variant="outline" asChild>
+                                            <Link href={route(`admin.${resource}.edit`, r.id)}>Edit</Link>
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => {
+                                                setToDelete(r);
+                                                setConfirmOpen(true);
+                                            }}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </div>
 
             {/* mobile */}
-            <div className="flex flex-col gap-4 sm:hidden">{renderMobile ? renderMobile(rows) : null}</div>
+            <div className="flex flex-col gap-4 sm:hidden">
+                {rows.length === 0 ? (
+                    <div className="text-muted-foreground py-6 text-center">No records found.</div>
+                ) : renderMobile ? (
+                    renderMobile(rows)
+                ) : null}
+            </div>
 
             {/* confirm dialog */}
             <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -82,7 +110,6 @@ export function CrudIndex<T extends { id: number }>(props: {
                             variant="destructive"
                             onClick={() => {
                                 if (toDelete) handleDelete(toDelete.id);
-                                setConfirmOpen(false);
                             }}
                         >
                             Delete
