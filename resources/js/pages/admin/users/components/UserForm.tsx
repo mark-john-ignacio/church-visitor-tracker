@@ -81,7 +81,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props
                 {/* Roles */}
                 <FormItem>
                     <fieldset>
-                        <FormLabel as="legend">Roles</FormLabel>
+                        <FormLabel>Roles</FormLabel>
                         <FormControl>
                             <Controller
                                 control={form.control}
