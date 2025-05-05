@@ -1,3 +1,4 @@
+import type { SortDirection } from '@/components/CRUD-index';
 import { CrudIndex } from '@/components/CRUD-index';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,8 +21,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // Extract columns for better type inference and readability
 const userColumns = [
-    { label: 'Name', key: 'name' },
-    { label: 'Email', key: 'email' },
+    { label: 'Name', key: 'name', sortable: true },
+    { label: 'Email', key: 'email', sortable: true },
     {
         label: 'Roles',
         key: 'roles',
@@ -35,6 +36,7 @@ const userColumns = [
     {
         label: 'Joined',
         key: 'created_at',
+        sortable: true,
         render: (u: User) => new Date(u.created_at).toLocaleDateString(),
     },
 ];
@@ -47,6 +49,31 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
             onSuccess: () => toast.success('User deleted successfully'),
             onError: () => toast.error('Error deleting user'),
         });
+    }, []);
+
+    const handleSearch = useCallback((searchTerm: string) => {
+        router.get(
+            route('admin.users.index'),
+            { search: searchTerm },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    }, []);
+
+    const handleSort = useCallback((column: string, direction: SortDirection) => {
+        router.get(
+            route('admin.users.index'),
+            {
+                sort: column,
+                order: direction,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
     }, []);
 
     const renderMobile = useMemo(
@@ -72,12 +99,7 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                             <Button asChild size="sm" variant="outline">
                                 <Link href={route('admin.users.edit', u.id)}>Edit</Link>
                             </Button>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDelete(u.id)} // Use the real delete handler
-                                aria-label={`Delete user ${u.name}`} // Add accessibility label
-                            >
+                            <Button variant="destructive" size="sm" onClick={() => handleDelete(u.id)} aria-label={`Delete user ${u.name}`}>
                                 Delete
                             </Button>
                         </div>
@@ -109,26 +131,12 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                             rows={users.data}
                             columns={userColumns}
                             renderMobile={renderMobile}
-                            onDelete={handleDelete} // Pass the delete handler to CrudIndex
+                            onDelete={handleDelete}
+                            paginator={users}
+                            searchable={true}
+                            onSearch={handleSearch}
+                            onSort={handleSort}
                         />
-
-                        {/* Pagination */}
-                        <div className="mt-4 flex items-center justify-between">
-                            <span className="text-muted-foreground text-sm">
-                                Showing {users.from ?? 0}–{users.to ?? 0} of {users.total}
-                            </span>
-                            <div className="flex gap-1">
-                                {users.links.map((l, i) =>
-                                    l.url ? (
-                                        <Button key={i} asChild size="sm" variant={l.active ? 'default' : 'outline'}>
-                                            <Link href={l.url} preserveScroll preserveState dangerouslySetInnerHTML={{ __html: l.label }} />
-                                        </Button>
-                                    ) : (
-                                        <Button key={i} size="sm" variant="outline" disabled dangerouslySetInnerHTML={{ __html: l.label }} />
-                                    ),
-                                )}
-                            </div>
-                        </div>
                     </CardContent>
                 </Card>
             </div>
