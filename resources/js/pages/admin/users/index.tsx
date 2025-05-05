@@ -26,7 +26,7 @@ const userColumns = [
         label: 'Roles',
         key: 'roles',
         render: (u: User) =>
-            u.roles.map((r) => (
+            (u.roles ?? []).map((r) => (
                 <Badge key={r.name} variant="secondary" className="mr-1">
                     {r.name}
                 </Badge>
@@ -60,9 +60,9 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                         <p>
                             <strong>Email:</strong> {u.email}
                         </p>
-                        {u.roles.length > 0 && (
+                        {(u.roles ?? []).length > 0 && (
                             <p className="flex flex-wrap gap-1">
-                                {u.roles.map((r) => (
+                                {(u.roles ?? []).map((r) => (
                                     <Badge key={r.name}>{r.name}</Badge>
                                 ))}
                             </p>
