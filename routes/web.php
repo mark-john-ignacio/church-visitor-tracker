@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\RoleController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -19,7 +20,8 @@ Route::middleware(['auth','verified','can:manage_users,' . App\Models\User::clas
 ->group(function(){
     Route::resource('users', UserManagementController::class)
             ->except(['show']);
-    // …other admin resources
+
+    Route::resource('roles', RoleController::class);
 });
 
 require __DIR__.'/settings.php';
