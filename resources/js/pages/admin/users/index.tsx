@@ -37,12 +37,11 @@ const userColumns = [
         key: 'created_at',
         render: (u: User) => new Date(u.created_at).toLocaleDateString(),
     },
-]; // Use 'as const' to preserve literal types
+];
 
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
     useFlashToast();
 
-    // Add a delete handler that can be passed to both CrudIndex and the mobile view
     const handleDelete = useCallback((id: number) => {
         router.delete(route('admin.users.destroy', id), {
             onSuccess: () => toast.success('User deleted successfully'),
@@ -50,7 +49,6 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
         });
     }, []);
 
-    // Use memoization for the renderMobile function to prevent unnecessary re-renders
     const renderMobile = useMemo(
         () => (rows: User[]) =>
             rows.map((u) => (

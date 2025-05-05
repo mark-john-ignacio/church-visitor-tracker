@@ -43,51 +43,69 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props
             <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
                 {/* Name */}
                 <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel htmlFor="name">Name</FormLabel>
                     <FormControl>
-                        <Input {...form.register('name')} />
+                        <Input id="name" aria-invalid={!!form.formState.errors.name} aria-describedby="name-error" {...form.register('name')} />
                     </FormControl>
-                    <FormMessage>{form.formState.errors.name?.message}</FormMessage>
+                    <FormMessage id="name-error">{form.formState.errors.name?.message}</FormMessage>
                 </FormItem>
 
                 {/* Email */}
                 <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel htmlFor="email">Email</FormLabel>
                     <FormControl>
-                        <Input type="email" {...form.register('email')} />
+                        <Input
+                            id="email"
+                            type="email"
+                            aria-invalid={!!form.formState.errors.email}
+                            aria-describedby="email-error"
+                            {...form.register('email')}
+                        />
                     </FormControl>
-                    <FormMessage>{form.formState.errors.email?.message}</FormMessage>
+                    <FormMessage id="email-error">{form.formState.errors.email?.message}</FormMessage>
                 </FormItem>
 
                 {/* Password */}
                 <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel htmlFor="password">Password</FormLabel>
                     <FormControl>
-                        <Input type="password" {...form.register('password')} />
+                        <Input
+                            id="password"
+                            type="password"
+                            aria-invalid={!!form.formState.errors.password}
+                            aria-describedby={form.formState.errors.password ? 'password-error' : 'password-desc'}
+                            {...form.register('password')}
+                        />
                     </FormControl>
-                    <FormDescription>Leave blank to keep existing</FormDescription>
-                    <FormMessage>{form.formState.errors.password?.message}</FormMessage>
+                    <FormDescription id="password-desc">Leave blank to keep existing</FormDescription>
+                    <FormMessage id="password-error">{form.formState.errors.password?.message}</FormMessage>
                 </FormItem>
 
                 {/* Confirm */}
                 <FormItem>
-                    <FormLabel>Confirm</FormLabel>
+                    <FormLabel htmlFor="password_confirmation">Confirm</FormLabel>
                     <FormControl>
-                        <Input type="password" {...form.register('password_confirmation')} />
+                        <Input
+                            id="password_confirmation"
+                            type="password"
+                            aria-invalid={!!form.formState.errors.password_confirmation}
+                            aria-describedby="password_confirmation-error"
+                            {...form.register('password_confirmation')}
+                        />
                     </FormControl>
-                    <FormMessage>{form.formState.errors.password_confirmation?.message}</FormMessage>
+                    <FormMessage id="password_confirmation-error">{form.formState.errors.password_confirmation?.message}</FormMessage>
                 </FormItem>
 
                 {/* Roles */}
                 <FormItem>
                     <fieldset>
-                        <FormLabel>Roles</FormLabel>
+                        <legend className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Roles</legend>
                         <FormControl>
                             <Controller
                                 control={form.control}
                                 name="roles"
                                 render={({ field }) => (
-                                    <div className="space-y-2" role="group" aria-labelledby="roles-label">
+                                    <div className="mt-2 space-y-2" role="group" aria-labelledby="roles-legend" id="roles-group">
                                         {Object.entries(roles).map(([id, name]) => (
                                             <label key={id} className="flex items-center space-x-2">
                                                 <Checkbox
@@ -100,6 +118,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props
                                                         }
                                                     }}
                                                     aria-invalid={!!form.formState.errors.roles}
+                                                    aria-describedby="roles-error"
                                                 />
                                                 <span>{name}</span>
                                             </label>
@@ -108,7 +127,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props
                                 )}
                             />
                         </FormControl>
-                        <FormMessage>{form.formState.errors.roles?.message}</FormMessage>
+                        <FormMessage id="roles-error">{form.formState.errors.roles?.message}</FormMessage>
                     </fieldset>
                 </FormItem>
 
