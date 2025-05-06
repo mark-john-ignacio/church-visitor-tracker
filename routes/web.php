@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\NavigationController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -24,6 +25,7 @@ Route::middleware(['auth','verified','can:manage_users,' . App\Models\User::clas
 
     Route::resource('roles', RoleController::class);
     Route::resource('permissions', PermissionController::class);
+    Route::resource('navigation', NavigationController::class);
 });
 
 

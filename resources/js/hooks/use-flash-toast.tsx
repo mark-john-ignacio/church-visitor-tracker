@@ -17,26 +17,44 @@ export default function useFlashToast() {
     const displayedRef = useRef<DisplayedRef>({});
 
     useEffect(() => {
+        // Clear flash messages from Inertia props after displaying them
+        const cleanup = () => {
+            if (props.flash) {
+                // This is a bit of a hack but prevents duplicate toasts
+                setTimeout(() => {
+                    if (props.flash) {
+                        Object.keys(props.flash).forEach((key) => {
+                            // @ts-ignore - This is modifying the props directly, which is not ideal
+                            // but works to prevent duplicate toasts
+                            props.flash[key as keyof FlashMessages] = null;
+                        });
+                    }
+                }, 100);
+            }
+        };
+
         (Object.keys(flash) as Array<keyof FlashMessages>).forEach((type) => {
             const message = flash[type];
 
             if (message && displayedRef.current[type] !== message) {
                 switch (type) {
                     case 'success':
-                        toast.success('Success', { description: message });
+                        toast.success(message);
                         break;
                     case 'error':
-                        toast.error('Error', { description: message });
+                        toast.error(message);
                         break;
                     case 'warning':
-                        toast.warning('Warning', { description: message });
+                        toast.warning(message);
                         break;
                     case 'info':
-                        toast.info('Info', { description: message });
+                        toast.info(message);
                         break;
                 }
                 displayedRef.current[type] = message;
             }
         });
+
+        return cleanup;
     }, [flash.success, flash.error, flash.warning, flash.info]);
 }
