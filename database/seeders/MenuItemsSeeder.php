@@ -89,6 +89,17 @@ class MenuItemsSeeder extends Seeder
             ]
         );
 
+        MenuItem::updateOrCreate(
+            ['name' => 'Permissions', 'parent_id' => $adminMenu->id],
+            [
+                'route' => '/admin/permissions',
+                'icon' => 'Key',
+                'permission_name' => 'manage_roles',
+                'order' => 3,
+                'type' => 'main'
+            ]
+        );
+
         // Create footer items
         MenuItem::updateOrCreate(
             ['name' => 'Documentation'],

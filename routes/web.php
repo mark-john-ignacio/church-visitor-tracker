@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -22,7 +23,9 @@ Route::middleware(['auth','verified','can:manage_users,' . App\Models\User::clas
             ->except(['show']);
 
     Route::resource('roles', RoleController::class);
+    Route::resource('permissions', PermissionController::class);
 });
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

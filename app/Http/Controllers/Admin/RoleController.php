@@ -55,7 +55,7 @@ class RoleController extends Controller
         $role->syncPermissions($request->permissions);
         
         return redirect()->route('admin.roles.index')
-            ->with('flash.banner', 'Role created successfully');
+            ->with('success', 'Role created successfully');
     }
 
     public function edit(Role $role): Response
@@ -71,20 +71,20 @@ class RoleController extends Controller
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
         if ($role->name === 'super_admin' && $request->name !== 'super_admin') {
-            return back()->with('flash.banner', 'Super Admin role name cannot be changed')->with('flash.bannerStyle', 'danger');
+            return back()->with('error', 'Super Admin role name cannot be changed');
         }
         
         $role->update(['name' => $request->name]);
         $role->syncPermissions($request->permissions);
         
         return redirect()->route('admin.roles.index')
-            ->with('flash.banner', 'Role updated successfully');
+            ->with('success', 'Role updated successfully');
     }
 
     public function destroy(Role $role): RedirectResponse
     {
         if ($role->name === 'super_admin') {
-            return back()->with('flash.banner', 'Super Admin role cannot be deleted')->with('flash.bannerStyle', 'danger');
+            return back()->with('error', 'Super Admin role cannot be deleted');
         }
         
         $role->delete();
