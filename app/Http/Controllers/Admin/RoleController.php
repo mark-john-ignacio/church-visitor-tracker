@@ -89,6 +89,6 @@ class RoleController extends Controller
         
         $role->delete();
         
-        return back()->with('flash.banner', 'Role deleted successfully');
+        return back()->with('success', 'Role deleted successfully');
     }
 }

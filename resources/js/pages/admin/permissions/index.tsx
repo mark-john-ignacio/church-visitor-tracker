@@ -2,12 +2,10 @@ import type { SortDirection } from '@/components/CRUD-index';
 import { CrudIndex } from '@/components/CRUD-index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import useFlashToast from '@/hooks/use-flash-toast';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PageProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useMemo } from 'react';
-import { toast } from 'sonner';
 
 interface Permission {
     id: number;
@@ -40,13 +38,8 @@ const permissionColumns = [
 ];
 
 export default function PermissionsIndex({ permissions }: PermissionsPageProps) {
-    useFlashToast();
-
     const handleDelete = useCallback((id: number) => {
-        router.delete(route('admin.permissions.destroy', id), {
-            // onSuccess: () => toast.success('Permission deleted successfully'),
-            onError: (err) => toast.error(err.message || 'Error deleting permission'),
-        });
+        router.delete(route('admin.permissions.destroy', id), {});
     }, []);
 
     const handleSearch = useCallback((searchTerm: string) => {

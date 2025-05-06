@@ -2,33 +2,41 @@ import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-type Flash = { success?: string; error?: string };
+interface FlashMessages {
+    success?: string;
+    error?: string;
+    warning?: string;
+    info?: string;
+}
+
+type DisplayedRef = Partial<Record<keyof FlashMessages, string>>;
 
 export default function useFlashToast() {
-    const page = usePage<{ flash?: Flash }>();
-    const { flash } = page.props;
-    const { success, error } = flash ?? {};
-    const displayedRef = useRef<{ success?: string; error?: string }>({});
+    const { props } = usePage<{ flash: FlashMessages }>();
+    const flash = props.flash ?? {};
+    const displayedRef = useRef<DisplayedRef>({});
 
     useEffect(() => {
-        if (success && displayedRef.current.success !== success) {
-            toast.success(success);
-            displayedRef.current.success = success;
+        (Object.keys(flash) as Array<keyof FlashMessages>).forEach((type) => {
+            const message = flash[type];
 
-            // Clear from Inertia props to prevent re-showing
-            if (page.props.flash) {
-                page.props.flash.success = undefined;
+            if (message && displayedRef.current[type] !== message) {
+                switch (type) {
+                    case 'success':
+                        toast.success('Success', { description: message });
+                        break;
+                    case 'error':
+                        toast.error('Error', { description: message });
+                        break;
+                    case 'warning':
+                        toast.warning('Warning', { description: message });
+                        break;
+                    case 'info':
+                        toast.info('Info', { description: message });
+                        break;
+                }
+                displayedRef.current[type] = message;
             }
-        }
-
-        if (error && displayedRef.current.error !== error) {
-            toast.error(error);
-            displayedRef.current.error = error;
-
-            // Clear from Inertia props to prevent re-showing
-            if (page.props.flash) {
-                page.props.flash.error = undefined;
-            }
-        }
-    }, [success, error]);
+        });
+    }, [flash.success, flash.error, flash.warning, flash.info]);
 }

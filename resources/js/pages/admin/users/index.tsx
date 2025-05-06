@@ -3,12 +3,10 @@ import { CrudIndex } from '@/components/CRUD-index';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import useFlashToast from '@/hooks/use-flash-toast';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PageProps, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useMemo } from 'react';
-import { toast } from 'sonner';
 
 interface UsersPageProps extends PageProps {
     users: LaravelPaginator<User>;
@@ -42,13 +40,8 @@ const userColumns = [
 ];
 
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
-    useFlashToast();
-
     const handleDelete = useCallback((id: number) => {
-        router.delete(route('admin.users.destroy', id), {
-            onSuccess: () => toast.success('User deleted successfully'),
-            onError: () => toast.error('Error deleting user'),
-        });
+        router.delete(route('admin.users.destroy', id), {});
     }, []);
 
     const handleSearch = useCallback((searchTerm: string) => {

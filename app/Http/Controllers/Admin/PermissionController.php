@@ -57,7 +57,7 @@ class PermissionController extends Controller
         Permission::create(['name' => $request->name]);
         
         return redirect()->route('admin.permissions.index')
-            ->with('flash.banner', 'Permission created successfully');
+            ->with('success', 'Permission created successfully');
     }
 
     public function edit(Permission $permission): Response
@@ -71,27 +71,25 @@ class PermissionController extends Controller
     {
         // Prevent updating system permissions
         if ($this->isSystemPermission($permission->name)) {
-            return back()->with('flash.banner', 'System permissions cannot be modified')
-                ->with('flash.bannerStyle', 'danger');
+            return back()->with('error', 'System permissions cannot be modified');
         }
         
         $permission->update(['name' => $request->name]);
         
         return redirect()->route('admin.permissions.index')
-            ->with('flash.banner', 'Permission updated successfully');
+            ->with('success', 'Permission updated successfully');
     }
 
     public function destroy(Permission $permission): RedirectResponse
     {
         // Prevent deleting system permissions
         if ($this->isSystemPermission($permission->name)) {
-            return back()->with('flash.banner', 'System permissions cannot be deleted')
-                ->with('flash.bannerStyle', 'danger');
+            return back()->with('error', 'System permissions cannot be deleted');
         }
         
         $permission->delete();
         
-        return back()->with('flash.banner', 'Permission deleted successfully');
+        return back()->with('success', 'Permission deleted successfully');
     }
 
     /**

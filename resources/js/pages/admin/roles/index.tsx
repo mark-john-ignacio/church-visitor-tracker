@@ -3,12 +3,10 @@ import { CrudIndex } from '@/components/CRUD-index';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import useFlashToast from '@/hooks/use-flash-toast';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PageProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useMemo } from 'react';
-import { toast } from 'sonner';
 
 interface Role {
     id: number;
@@ -47,13 +45,8 @@ const roleColumns = [
 ];
 
 export default function RolesIndex({ roles }: RolesPageProps) {
-    useFlashToast();
-
     const handleDelete = useCallback((id: number) => {
-        router.delete(route('admin.roles.destroy', id), {
-            onSuccess: () => toast.success('Role deleted successfully'),
-            onError: (err) => toast.error(err.message || 'Error deleting role'),
-        });
+        router.delete(route('admin.roles.destroy', id), {});
     }, []);
 
     const handleSearch = useCallback((searchTerm: string) => {
