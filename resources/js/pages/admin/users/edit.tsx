@@ -1,37 +1,61 @@
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { UserForm } from './components/UserForm';
 
-const baseCrumbs: BreadcrumbItem[] = [
-    { title: 'Admin', href: '#' },
-    { title: 'Users', href: route('admin.users.index') },
-    { title: 'Edit', href: '#' }, // we'll override below
-];
+interface EditUserProps extends PageProps {
+    user: User;
+    roles: Record<string, string>;
+    isSuperAdmin: boolean;
+    canEdit: boolean;
+    superAdminExists: boolean;
+}
 
-export default function EditUser({ user, roles }: { user: any; roles: Record<string, string> }) {
-    const breadcrumbs = baseCrumbs.map((b) => (b.title === 'Edit' ? { ...b, href: route('admin.users.edit', { user: user.id }) } : b));
+export default function EditUser({ user, roles, isSuperAdmin, canEdit, superAdminExists }: EditUserProps) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Admin', href: '#' },
+        { title: 'Users', href: route('admin.users.index') },
+        { title: canEdit ? 'Edit' : 'View', href: route('admin.users.edit', user.id) },
+    ];
 
     const defaultValues = {
         name: user.name,
         email: user.email,
-        password: undefined,
-        password_confirmation: undefined,
-        roles: user.roles.map((r: any) => r.name),
+        password: '',
+        password_confirmation: '',
+        roles: user.roles?.map((r) => r.name) || [],
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Edit User" />
+            <Head title={`${canEdit ? 'Edit' : 'View'} User: ${user.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Edit User</CardTitle>
-                        <CardDescription>Update user details.</CardDescription>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>
+                                {canEdit ? 'Edit' : 'View'} User: {user.name}
+                            </CardTitle>
+                            {isSuperAdmin && <Badge variant="destructive">Super Admin</Badge>}
+                        </div>
+                        <CardDescription>
+                            {isSuperAdmin && !canEdit
+                                ? 'Super Admin users can only be edited by themselves.'
+                                : 'Update user profile and role assignments.'}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <UserForm defaultValues={defaultValues} roles={roles} url={route('admin.users.update', { user: user.id })} method="put" />
+                        <UserForm
+                            defaultValues={defaultValues}
+                            roles={roles}
+                            url={route('admin.users.update', user.id)}
+                            method="put"
+                            disabled={!canEdit}
+                            superAdminExists={superAdminExists}
+                            isSuperAdmin={isSuperAdmin}
+                        />
                     </CardContent>
                 </Card>
             </div>

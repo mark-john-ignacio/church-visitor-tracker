@@ -23,15 +23,13 @@ export function CrudIndex<T extends { id: number }>(props: {
     resource: string;
     renderMobile?: (rows: T[]) => React.ReactNode;
     onDelete?: (id: number) => void;
-    // Pagination props
     paginator?: LaravelPaginator<T>;
-    // Search props
     searchable?: boolean;
     onSearch?: (searchTerm: string) => void;
-    // Sorting props
     onSort?: (column: string, direction: SortDirection) => void;
+    canDelete?: (row: T) => boolean;
 }) {
-    const { rows, columns, resource, renderMobile, onDelete, paginator, searchable, onSearch, onSort } = props;
+    const { rows, columns, resource, renderMobile, onDelete, paginator, searchable, onSearch, onSort, canDelete = () => true } = props;
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [toDelete, setToDelete] = useState<T | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -155,16 +153,18 @@ export function CrudIndex<T extends { id: number }>(props: {
                                         <Button size="sm" className="mr-2" variant="outline" asChild>
                                             <Link href={route(`admin.${resource}.edit`, r.id)}>Edit</Link>
                                         </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => {
-                                                setToDelete(r);
-                                                setConfirmOpen(true);
-                                            }}
-                                        >
-                                            Delete
-                                        </Button>
+                                        {canDelete(r) && (
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={() => {
+                                                    setToDelete(r);
+                                                    setConfirmOpen(true);
+                                                }}
+                                            >
+                                                Delete
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

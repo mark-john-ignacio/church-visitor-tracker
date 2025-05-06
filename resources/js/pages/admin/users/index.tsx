@@ -40,8 +40,23 @@ const userColumns = [
 ];
 
 export default function UserManagementIndex({ auth, users }: UsersPageProps) {
+    const isSuperAdmin = (user: User) => {
+        return (user.roles ?? []).some((r) => r.name === 'super_admin');
+    };
+
     const handleDelete = useCallback((id: number) => {
-        router.delete(route('admin.users.destroy', id), {});
+        router.delete(route('admin.users.destroy', id), {
+            onSuccess: () => {
+                toast.success('User deleted successfully');
+            },
+            onError: (errors) => {
+                if (errors.default) {
+                    toast.error(errors.default);
+                } else {
+                    toast.error('Failed to delete user');
+                }
+            },
+        });
     }, []);
 
     const handleSearch = useCallback((searchTerm: string) => {
@@ -71,35 +86,47 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
 
     const renderMobile = useMemo(
         () => (rows: User[]) =>
-            rows.map((u) => (
-                <Card key={u.id} className="border">
-                    <CardContent className="space-y-1">
-                        <p>
-                            <strong>Name:</strong> {u.name}
-                        </p>
-                        <p>
-                            <strong>Email:</strong> {u.email}
-                        </p>
-                        {(u.roles ?? []).length > 0 && (
-                            <p className="flex flex-wrap gap-1">
-                                {(u.roles ?? []).map((r) => (
-                                    <Badge key={r.name}>{r.name}</Badge>
-                                ))}
+            rows.map((u) => {
+                const userIsSuperAdmin = isSuperAdmin(u);
+
+                return (
+                    <Card key={u.id} className="border">
+                        <CardContent className="space-y-1 p-4">
+                            <div className="flex items-center gap-2">
+                                <p className="font-medium">{u.name}</p>
+                                {userIsSuperAdmin && <Badge variant="destructive">Super Admin</Badge>}
+                            </div>
+                            <p>
+                                <strong>Email:</strong> {u.email}
                             </p>
-                        )}
-                        <p className="text-muted-foreground text-xs">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
-                        <div className="flex justify-end gap-2">
-                            <Button asChild size="sm" variant="outline">
-                                <Link href={route('admin.users.edit', u.id)}>Edit</Link>
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete(u.id)} aria-label={`Delete user ${u.name}`}>
-                                Delete
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )),
-        [],
+                            {(u.roles ?? []).length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                    <strong>Roles:</strong>
+                                    <div className="flex flex-wrap gap-1">
+                                        {(u.roles ?? []).map((r) => (
+                                            <Badge key={r.name} variant={r.name === 'super_admin' ? 'destructive' : 'secondary'}>
+                                                {r.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <p className="text-muted-foreground text-xs">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button asChild size="sm" variant="outline">
+                                    <Link href={route('admin.users.edit', u.id)}>{userIsSuperAdmin && u.id !== auth.user.id ? 'View' : 'Edit'}</Link>
+                                </Button>
+                                {!userIsSuperAdmin && (
+                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(u.id)} aria-label={`Delete user ${u.name}`}>
+                                        Delete
+                                    </Button>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            }),
+        [auth.user?.id],
     );
 
     return (
@@ -129,6 +156,7 @@ export default function UserManagementIndex({ auth, users }: UsersPageProps) {
                             searchable={true}
                             onSearch={handleSearch}
                             onSort={handleSort}
+                            canDelete={(user) => !isSuperAdmin(user)}
                         />
                     </CardContent>
                 </Card>

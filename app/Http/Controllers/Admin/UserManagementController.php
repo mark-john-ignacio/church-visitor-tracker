@@ -62,7 +62,11 @@ class UserManagementController extends Controller
     public function create(): Response
     {
         $roles = Role::pluck('name', 'id');
-        return Inertia::render('admin/users/create', compact('roles'));
+        $superAdminExists = User::role('super_admin')->exists();
+        return Inertia::render('admin/users/create', [
+            'roles' => $roles,
+            'superAdminExists' => $superAdminExists
+        ]);
     }
 
     /**
@@ -70,12 +74,18 @@ class UserManagementController extends Controller
      */
     public function store(StoreUserRequest $request): RedirectResponse
     {
+        if (in_array('super_admin', $request->roles)) {
+            if (User::role('super_admin')->exists()) {
+                return back()->with('error', 'There can only be one Super Admin user');
+            }
+        }
+        
         $user = User::create($request->validatedWithHash());
-        $user->assignRole($request->roles);
-
+        $user->syncRoles($request->roles);
+        
         return redirect()
             ->route('admin.users.index')
-            ->with('success', 'User created.');
+            ->with('success', 'User created successfully');
     }
 
     /**
@@ -83,11 +93,20 @@ class UserManagementController extends Controller
      */
     public function edit(User $user): Response
     {
+        $isSuperAdmin = $user->hasRole('super_admin');
+        $canEdit = !$isSuperAdmin || $user->id === auth()->id();
+        
         $roles = Role::pluck('name', 'id');
-
+        $superAdminExists = User::role('super_admin')
+            ->where('id', '!=', $user->id)
+            ->exists();
+        
         return Inertia::render('admin/users/edit', [
-            'user'  => $user->load('roles'),
+            'user' => $user->load('roles'),
             'roles' => $roles,
+            'isSuperAdmin' => $isSuperAdmin,
+            'canEdit' => $canEdit,
+            'superAdminExists' => $superAdminExists
         ]);
     }
 
@@ -96,10 +115,29 @@ class UserManagementController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        // Check if user has super_admin role and not current user
+        if ($user->hasRole('super_admin') && $user->id !== auth()->id()) {
+            return back()->with('error', 'Super Admin users can only be edited by themselves');
+        }
+        
+        // Prevent removing super_admin role from super_admin
+        if ($user->hasRole('super_admin') && !in_array('super_admin', $request->roles)) {
+            return back()->with('error', 'Cannot remove Super Admin role from this user');
+        }
+        
+        // Prevent assigning super_admin if it already exists
+        if (!$user->hasRole('super_admin') && in_array('super_admin', $request->roles)) {
+            if (User::role('super_admin')->exists()) {
+                return back()->with('error', 'There can only be one Super Admin user');
+            }
+        }
+        
         $user->update($request->validatedWithHash());
         $user->syncRoles($request->roles);
-        return redirect()->route('admin.users.index')
-            ->with('success','User updated.');
+        
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User updated successfully');
     }
 
     /**
@@ -107,10 +145,14 @@ class UserManagementController extends Controller
      */
     public function destroy(User $user): RedirectResponse
     {
+        if ($user->hasRole('super_admin')) {
+            return back()->with('error', 'Super Admin users cannot be deleted');
+        }
+        
         $user->delete();
 
         return redirect()
             ->route('admin.users.index')
-            ->with('success', 'User deleted.');
+            ->with('success', 'User deleted successfully');
     }
 }

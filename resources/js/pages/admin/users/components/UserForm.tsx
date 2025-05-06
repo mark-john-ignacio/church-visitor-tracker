@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { FormData, schema } from './schema';
@@ -15,128 +15,167 @@ interface Props {
     url: string;
     method: 'post' | 'put';
     onSuccess?: () => void;
+    disabled?: boolean;
+    superAdminExists?: boolean;
+    isSuperAdmin?: boolean;
 }
 
-export function UserForm({ defaultValues, roles, url, method, onSuccess }: Props) {
+export function UserForm({ defaultValues, roles, url, method, onSuccess, disabled = false, superAdminExists = false, isSuperAdmin = false }: Props) {
     const form = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues,
     });
 
-    // reset on edit
+    // Reset form on default values change
     useEffect(() => {
         form.reset(defaultValues);
     }, [defaultValues]);
 
     const submit = (data: FormData) => {
+        if (disabled) return;
+
         router[method](url, data, {
             onSuccess: () => {
-                toast.success('Saved.');
+                toast.success('User saved successfully');
                 onSuccess?.();
             },
-            onError: () => toast.error('Error saving.'),
+            onError: (errors) => {
+                if (errors.default) {
+                    toast.error(errors.default);
+                } else {
+                    toast.error('Error saving user');
+                }
+            },
         });
     };
+
+    const setRoleChecked = useCallback((field: any, role: string, checked: boolean) => {
+        const newRoles = checked ? [...field.value, role] : field.value.filter((r: string) => r !== role);
+        field.onChange(newRoles);
+    }, []);
 
     return (
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
-                {/* Name */}
-                <FormItem>
-                    <FormLabel htmlFor="name">Name</FormLabel>
-                    <FormControl>
-                        <Input id="name" aria-invalid={!!form.formState.errors.name} aria-describedby="name-error" {...form.register('name')} />
-                    </FormControl>
-                    <FormMessage id="name-error">{form.formState.errors.name?.message}</FormMessage>
-                </FormItem>
+                {/* Name field */}
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="John Doe" {...field} disabled={disabled} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-                {/* Email */}
-                <FormItem>
-                    <FormLabel htmlFor="email">Email</FormLabel>
-                    <FormControl>
-                        <Input
-                            id="email"
-                            type="email"
-                            aria-invalid={!!form.formState.errors.email}
-                            aria-describedby="email-error"
-                            {...form.register('email')}
-                        />
-                    </FormControl>
-                    <FormMessage id="email-error">{form.formState.errors.email?.message}</FormMessage>
-                </FormItem>
+                {/* Email field */}
+                <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                                <Input placeholder="john@example.com" type="email" {...field} disabled={disabled} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-                {/* Password */}
-                <FormItem>
-                    <FormLabel htmlFor="password">Password</FormLabel>
-                    <FormControl>
-                        <Input
-                            id="password"
-                            type="password"
-                            aria-invalid={!!form.formState.errors.password}
-                            aria-describedby={form.formState.errors.password ? 'password-error' : 'password-desc'}
-                            {...form.register('password')}
-                        />
-                    </FormControl>
-                    <FormDescription id="password-desc">Leave blank to keep existing</FormDescription>
-                    <FormMessage id="password-error">{form.formState.errors.password?.message}</FormMessage>
-                </FormItem>
+                {/* Password field */}
+                <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>{method === 'put' ? 'New Password' : 'Password'}</FormLabel>
+                            <FormControl>
+                                <Input type="password" {...field} value={field.value || ''} disabled={disabled} />
+                            </FormControl>
+                            <FormDescription>{method === 'put' ? 'Leave blank to keep current password' : 'Enter a strong password'}</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-                {/* Confirm */}
-                <FormItem>
-                    <FormLabel htmlFor="password_confirmation">Confirm</FormLabel>
-                    <FormControl>
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            aria-invalid={!!form.formState.errors.password_confirmation}
-                            aria-describedby="password_confirmation-error"
-                            {...form.register('password_confirmation')}
-                        />
-                    </FormControl>
-                    <FormMessage id="password_confirmation-error">{form.formState.errors.password_confirmation?.message}</FormMessage>
-                </FormItem>
+                {/* Password confirmation field */}
+                <FormField
+                    control={form.control}
+                    name="password_confirmation"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Confirm Password</FormLabel>
+                            <FormControl>
+                                <Input type="password" {...field} value={field.value || ''} disabled={disabled} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
                 {/* Roles */}
-                <FormItem>
-                    <fieldset>
-                        <legend className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Roles</legend>
-                        <FormControl>
-                            <Controller
-                                control={form.control}
-                                name="roles"
-                                render={({ field }) => (
-                                    <div className="mt-2 space-y-2" role="group" aria-labelledby="roles-legend" id="roles-group">
-                                        {Object.entries(roles).map(([id, name]) => (
-                                            <label key={id} className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    checked={field.value.includes(name)}
-                                                    onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            field.onChange([...field.value, name]);
-                                                        } else {
-                                                            field.onChange(field.value.filter((v) => v !== name));
-                                                        }
-                                                    }}
-                                                    aria-invalid={!!form.formState.errors.roles}
-                                                    aria-describedby="roles-error"
-                                                />
-                                                <span>{name}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                            />
-                        </FormControl>
-                        <FormMessage id="roles-error">{form.formState.errors.roles?.message}</FormMessage>
-                    </fieldset>
-                </FormItem>
+                <FormField
+                    control={form.control}
+                    name="roles"
+                    render={({ field }) => (
+                        <FormItem>
+                            <fieldset>
+                                <FormLabel as="legend">Roles</FormLabel>
+                                <FormControl>
+                                    <Controller
+                                        name="roles"
+                                        control={form.control}
+                                        render={({ field }) => (
+                                            <div role="group" aria-labelledby="roles-legend" className="space-y-2 pt-1">
+                                                {Object.entries(roles).map(([id, name]) => {
+                                                    const isSuperAdminRole = name === 'super_admin';
+                                                    const roleChecked = field.value.includes(name);
+                                                    const disableCheck =
+                                                        disabled ||
+                                                        (isSuperAdminRole && superAdminExists && !roleChecked) ||
+                                                        (isSuperAdminRole && roleChecked && isSuperAdmin);
 
-                <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => router.visit(route('admin.users.index'))}>
-                        Cancel
-                    </Button>
-                    <Button type="submit">Save</Button>
-                </div>
+                                                    return (
+                                                        <label key={id} className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                checked={roleChecked}
+                                                                disabled={disableCheck}
+                                                                onCheckedChange={(checked) => {
+                                                                    setRoleChecked(field, name, !!checked);
+                                                                }}
+                                                                aria-label={`Role: ${name}`}
+                                                                aria-invalid={!!form.formState.errors.roles}
+                                                            />
+                                                            <span>
+                                                                {name}
+                                                                {isSuperAdminRole && roleChecked && isSuperAdmin && (
+                                                                    <span className="ml-2 text-sm text-orange-600">(Cannot be removed)</span>
+                                                                )}
+                                                                {isSuperAdminRole && superAdminExists && !roleChecked && (
+                                                                    <span className="ml-2 text-sm text-orange-600">(Already assigned)</span>
+                                                                )}
+                                                            </span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </fieldset>
+                        </FormItem>
+                    )}
+                />
+
+                <Button type="submit" className="w-full" disabled={disabled}>
+                    Save User
+                </Button>
             </form>
         </FormProvider>
     );
