@@ -1,9 +1,41 @@
-import image from '@/assets/images/myxfin-front-page.jpg';
+import imageDark from '@/assets/images/myxfin-front-page-dark.png';
+import imageLight from '@/assets/images/myxfin-front-page.png';
+import { useAppearance } from '@/hooks/use-appearance';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 export default function Welcome() {
     const { auth } = usePage<SharedData>().props;
+    const { appearance } = useAppearance();
+    const [currentImage, setCurrentImage] = useState(imageLight);
+
+    useEffect(() => {
+        const updateImage = () => {
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (appearance === 'dark' || (appearance === 'system' && systemPrefersDark)) {
+                setCurrentImage(imageDark);
+            } else {
+                setCurrentImage(imageLight);
+            }
+        };
+
+        updateImage();
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = () => {
+            if (appearance === 'system') {
+                updateImage();
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleChange);
+
+        return () => {
+            mediaQuery.removeEventListener('change', handleChange);
+        };
+    }, [appearance]);
 
     return (
         <>
@@ -55,11 +87,7 @@ export default function Welcome() {
                             </p>
                         </div>
                         <div className="relative -mb-px aspect-[335/376] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#fff2f2] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]">
-                            <img
-                                src={image} // Ensure this path is correct
-                                alt="Financial documents and calculator"
-                                className="h-full w-full object-cover"
-                            />
+                            <img src={currentImage} alt="MYXFinancials" className="h-full w-full object-cover" />
                             <div className="absolute inset-0 rounded-t-lg shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-t-none lg:rounded-r-lg dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]" />
                         </div>
                     </main>
