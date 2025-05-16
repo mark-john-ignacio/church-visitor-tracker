@@ -1,5 +1,5 @@
-import imageDark from '@/assets/images/myxfin-front-page-dark.png';
-import imageLight from '@/assets/images/myxfin-front-page.png';
+import imageDark from '@/assets/images/myxfin-front-page-dark.webp';
+import imageLight from '@/assets/images/myxfin-front-page.webp';
 import { useAppearance } from '@/hooks/use-appearance';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
