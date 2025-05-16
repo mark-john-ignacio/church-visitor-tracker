@@ -42,20 +42,16 @@ export default function Welcome() {
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
                         <div className="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
-                            <h1 className="mb-4 text-xl font-medium lg:text-2xl">
-                                Elevate your accounting experience with MYXFinancials: Easy & Simple ERP Software
-                            </h1>
+                            <h1 className="mb-4 text-xl font-medium lg:text-2xl">MYXFinancials: Easy & Simple ERP Software</h1>
                             <p className="mb-3 text-[#706f6c] dark:text-[#A1A09A]">
-                                — a dynamic solution crafted for accountants who demand both ease and excellence.
+                                A dynamic ERP solution for accountants seeking ease and excellence.
                             </p>
                             <p className="mb-3 text-[#706f6c] dark:text-[#A1A09A]">
-                                Enterprise Resource Planning, or ERP, is like the conductor of the business orchestra. It's a software solution that
-                                brings harmony to different departments by integrating and managing their key processes. From finance and human
-                                resources to supply chain and customer relations, ERP keeps everything in tune. It's basically the maestro of
-                                efficiency in the business world.
+                                ERP integrates and manages key business processes across departments, from finance and HR to supply chain and customer
+                                relations, ensuring operational harmony and efficiency.
                             </p>
                             <p className="text-[#706f6c] dark:text-[#A1A09A]">
-                                ERP for Philippines Businesses, BIR Report Generation and Philippines Accounting Software.
+                                Ideal for Philippines Businesses: BIR Report Generation & Localized Accounting.
                             </p>
                         </div>
                         <div className="relative -mb-px aspect-[335/376] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#fff2f2] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]">
