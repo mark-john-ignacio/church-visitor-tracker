@@ -4,74 +4,66 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\Resolvers\TenantResolver;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
-use Symfony\Component\HttpFoundation\Response;
+use App\Models\Company;
+use Illuminate\Support\Facades\Log;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
-class InitializeTenancyBySession extends \Stancl\Tenancy\Middleware\IdentificationMiddleware
+class InitializeTenancyBySession
 {
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-        // Get the current user
-        $user = $request->user();
-
-        // If no user is logged in, skip tenant initialization
-        if (!$user) {
-            return $next($request);
-        }
-
-        // Check if a company_id exists in session
+        // Get the active company ID from session
         $companyId = session('active_company_id');
 
-        // If not in session but user has submitted one from the switcher
-        if (!$companyId && $request->has('switch_company')) {
-            $companyId = $request->input('switch_company');
-            
-            // Store in session for future requests
-            if ($companyId) {
-                session(['active_company_id' => $companyId]);
-            }
-        }
-
-        // If still no company_id, try to get the user's primary or first company
         if (!$companyId) {
-            $primaryCompany = $user->companies()
-                ->wherePivot('is_primary', true)
-                ->first();
+            // If no active company in session, try to get user's default company
+            $user = $request->user();
+            if ($user) {
+                $primaryCompany = $user->companies()
+                    ->wherePivot('is_primary', true)
+                    ->first();
 
-            if (!$primaryCompany) {
-                $primaryCompany = $user->companies()->first();
-            }
+                if (!$primaryCompany) {
+                    $primaryCompany = $user->companies()->first();
+                }
 
-            if ($primaryCompany) {
-                $companyId = $primaryCompany->id;
-                session(['active_company_id' => $companyId]);
+                if ($primaryCompany) {
+                    $companyId = $primaryCompany->id;
+                    session(['active_company_id' => $companyId]);
+                }
             }
         }
 
-        // If we have a company ID and the user has access to it, initialize tenancy
         if ($companyId) {
-            // Check if the user has access to this company
-            $hasAccess = $user->companies()->where('id', $companyId)->exists();
-            
-            if ($hasAccess) {
-                try {
-                    $tenant = $this->tenancy->find($companyId);
-                    $this->tenancy->initialize($tenant);
-                } catch (TenantCouldNotBeIdentifiedException $e) {
-                    // If the tenant cannot be found, clear the session
-                    session()->forget('active_company_id');
+            try {
+                // Find the tenant/company
+                $tenant = Company::find($companyId);
+                
+                if ($tenant) {
+                    tenancy()->initialize($tenant);
+                    // Debug information
+                    Log::debug('Tenant initialized from session', [
+                        'company_id' => $companyId,
+                        'path' => $request->path()
+                    ]);
+                } else {
+                    Log::warning('Company not found', ['company_id' => $companyId]);
                 }
-            } else {
-                // User doesn't have access to this company, clear the session
-                session()->forget('active_company_id');
+            } catch (\Exception $e) {
+                Log::error('Error initializing tenant', [
+                    'company_id' => $companyId,
+                    'exception' => $e->getMessage()
+                ]);
             }
+        } else {
+            Log::debug('No company ID in session', ['path' => $request->path()]);
         }
 
         return $next($request);

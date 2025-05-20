@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
 
         // Get active company from session for authenticated users
         $activeCompanyId = null;
+        $activeCompany = null;
         if ($user) {
             $activeCompanyId = session('active_company_id');
             
@@ -68,6 +69,21 @@ class HandleInertiaRequests extends Middleware
                 if ($primaryCompany) {
                     $activeCompanyId = $primaryCompany->id;
                     session(['active_company_id' => $activeCompanyId]);
+                    $activeCompany = [
+                        'id' => $primaryCompany->id,
+                        'name' => $primaryCompany->name,
+                        'display_name' => $primaryCompany->display_name,
+                    ];
+                }
+            } else if ($activeCompanyId) {
+                // Get the active company details
+                $company = $user->companies()->where('companies.id', $activeCompanyId)->first();
+                if ($company) {
+                    $activeCompany = [
+                        'id' => $company->id,
+                        'name' => $company->name,
+                        'display_name' => $company->display_name,
+                    ];
                 }
             }
         }
@@ -78,7 +94,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
                 'roles' => $user ? $user->roles->pluck('name') : [],
-                'active_company_id' => $activeCompanyId,
+            'active_company_id' => $activeCompanyId,
+            'active_company' => $activeCompany,
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
