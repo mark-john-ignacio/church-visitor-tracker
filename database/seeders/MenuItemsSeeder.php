@@ -21,13 +21,17 @@ class MenuItemsSeeder extends Seeder
         $manageUsersPerm = Permission::firstOrCreate(['name' => 'manage_users']);
         $manageRolesPerm = Permission::firstOrCreate(['name' => 'manage_roles']);
         $manageNavigationPerm = Permission::firstOrCreate(['name' => 'manage_navigation']);
+        
+        // Add Chart of Accounts permissions
+        $viewMasterfilesPerm = Permission::firstOrCreate(['name' => 'view_masterfiles']);
+        $manageChartOfAccountsPerm = Permission::firstOrCreate(['name' => 'manage_chart_of_accounts']);
 
         // Create roles and assign permissions
         $superAdmin = Role::firstOrCreate(['name'=>'super_admin']);
         $superAdmin->givePermissionTo(Permission::all());
 
         $admin = Role::firstOrCreate(['name' => 'admin']);
-        $admin->givePermissionTo([$viewDashboardPerm, $viewAdminPerm, $manageUsersPerm]);
+        $admin->givePermissionTo([$viewDashboardPerm, $viewAdminPerm, $manageUsersPerm, $viewMasterfilesPerm, $manageChartOfAccountsPerm]);
 
         $user = Role::firstOrCreate(['name' => 'user']);
         $user->givePermissionTo('view_dashboard');
@@ -39,6 +43,29 @@ class MenuItemsSeeder extends Seeder
                 'route' => '/dashboard',
                 'icon' => 'LayoutGrid',
                 'permission_name' => 'view_dashboard',
+                'order' => 1,
+                'type' => 'main'
+            ]
+        );
+
+        // Create Masterfiles section
+        $masterfilesMenu = MenuItem::updateOrCreate(
+            ['name' => 'Masterfiles'],
+            [
+                'route' => null,
+                'icon' => 'Database',
+                'permission_name' => 'view_masterfiles',
+                'order' => 5,
+                'type' => 'main'
+            ]
+        );
+
+        MenuItem::updateOrCreate(
+            ['name' => 'Chart of Accounts', 'parent_id' => $masterfilesMenu->id],
+            [
+                'route' => '/masterfiles/chart-of-accounts',
+                'icon' => 'BarChart2',
+                'permission_name' => 'manage_chart_of_accounts',
                 'order' => 1,
                 'type' => 'main'
             ]
@@ -95,7 +122,7 @@ class MenuItemsSeeder extends Seeder
                 'route' => '/admin/permissions',
                 'icon' => 'Key',
                 'permission_name' => 'manage_roles',
-                'order' => 3,
+                'order' => 4,
                 'type' => 'main'
             ]
         );

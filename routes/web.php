@@ -17,22 +17,6 @@ Route::get('/', function () {
 // Apply custom tenant middleware to all authenticated routes
 Route::middleware(['web', 'auth', InitializeTenancyBySession::class])
     ->group(function () {
-        // Diagnostic route - remove in production
-        Route::get('/debug', function () {
-            $data = [
-                'users' => \App\Models\User::with('companies')->get(),
-                'companies' => \App\Models\Company::all(),
-                'user_companies' => \DB::table('user_companies')->get(),
-                'chart_of_accounts' => \App\Models\ChartOfAccount::all(),
-                'current_tenant' => tenant() ? [
-                    'id' => tenant()->id,
-                    'name' => tenant()->name,
-                    'display_name' => tenant()->display_name,
-                ] : null,
-                'active_company_id' => session('active_company_id'),
-            ];
-            return response()->json($data);
-        });
 
         // Dashboard
         Route::get('dashboard', fn () => Inertia::render('dashboard'))
@@ -60,10 +44,14 @@ Route::middleware(['web', 'auth', InitializeTenancyBySession::class])
                 Route::get('list', [CompanySwitcherController::class, 'getCompanies'])->name('list');
             });
 
-        // Chart of Accounts Route - Example for tenant-specific data
-        Route::resource('chart-of-accounts', \App\Http\Controllers\ChartOfAccountController::class);
-        
-        // Include other auth-required routes
+        Route::middleware(['can:manage_chart_of_accounts'])
+            ->prefix('masterfiles')
+            ->name('masterfiles.')
+            ->group(function () {
+                Route::resource('chart-of-accounts', \App\Http\Controllers\Masterfiles\ChartOfAccountController::class);
+            });
+
+        // Settings routes
         require __DIR__.'/settings.php';
     });
 

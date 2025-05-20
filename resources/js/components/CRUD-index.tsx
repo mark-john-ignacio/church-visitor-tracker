@@ -21,6 +21,7 @@ export function CrudIndex<T extends { id: number }>(props: {
     rows: T[];
     columns: Column<T>[];
     resource: string;
+    routePrefix?: string;
     renderMobile?: (rows: T[]) => React.ReactNode;
     onDelete?: (id: number) => void;
     paginator?: LaravelPaginator<T>;
@@ -29,12 +30,26 @@ export function CrudIndex<T extends { id: number }>(props: {
     onSort?: (column: string, direction: SortDirection) => void;
     canDelete?: (row: T) => boolean;
 }) {
-    const { rows, columns, resource, renderMobile, onDelete, paginator, searchable, onSearch, onSort, canDelete = () => true } = props;
+    const {
+        rows,
+        columns,
+        resource,
+        routePrefix = 'admin',
+        renderMobile,
+        onDelete,
+        paginator,
+        searchable,
+        onSearch,
+        onSort,
+        canDelete = () => true,
+    } = props;
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [toDelete, setToDelete] = useState<T | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+    const fullRoutePrefix = routePrefix ? `${routePrefix}.` : '';
 
     const handleDelete = useCallback(
         (id: number) => {
@@ -43,7 +58,7 @@ export function CrudIndex<T extends { id: number }>(props: {
                 setConfirmOpen(false);
                 return;
             }
-            router.delete(route(`admin.${resource}.destroy`, id), {
+            router.delete(route(`${fullRoutePrefix}${resource}.destroy`, id), {
                 onSuccess: () => {
                     toast.success('Deleted');
                     setConfirmOpen(false);
@@ -51,7 +66,7 @@ export function CrudIndex<T extends { id: number }>(props: {
                 onError: () => toast.error('Error deleting'),
             });
         },
-        [resource, onDelete],
+        [resource, onDelete, fullRoutePrefix],
     );
 
     const handleSearch = useCallback(() => {
@@ -151,7 +166,7 @@ export function CrudIndex<T extends { id: number }>(props: {
                                     ))}
                                     <TableCell className="text-right">
                                         <Button size="sm" className="mr-2" variant="outline" asChild>
-                                            <Link href={route(`admin.${resource}.edit`, r.id)}>Edit</Link>
+                                            <Link href={route(`${fullRoutePrefix}${resource}.edit`, r.id)}>Edit</Link>
                                         </Button>
                                         {canDelete(r) && (
                                             <Button

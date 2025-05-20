@@ -77,3 +77,15 @@ export interface LaravelPaginator<T> {
     to: number | null;
     total: number;
 }
+
+export interface ChartOfAccount {
+    id: number;
+    company_id: string;
+    account_code: string;
+    account_name: string;
+    account_type: string;
+    description: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
