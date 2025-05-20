@@ -1,4 +1,4 @@
-import type { SortDirection } from '@/components/CRUD-index';
+import type { Column, SortDirection } from '@/components/CRUD-index';
 import { CrudIndex } from '@/components/CRUD-index';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 // Extract columns for better type inference and readability
-const accountColumns = [
+const accountColumns: Column<ChartOfAccount>[] = [
     { label: 'Code', key: 'account_code', sortable: true },
     { label: 'Name', key: 'account_name', sortable: true },
     { label: 'Type', key: 'account_type', sortable: true },
@@ -33,7 +33,7 @@ const accountColumns = [
         key: 'is_active',
         sortable: true,
         render: (account: ChartOfAccount) => (
-            <Badge variant={account.is_active ? 'success' : 'secondary'}>{account.is_active ? 'Active' : 'Inactive'}</Badge>
+            <Badge variant={account.is_active ? 'default' : 'secondary'}>{account.is_active ? 'Active' : 'Inactive'}</Badge>
         ),
     },
     {
@@ -92,7 +92,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                     <CardContent className="space-y-1 p-4">
                         <div className="flex items-center justify-between">
                             <p className="font-medium">{account.account_code}</p>
-                            <Badge variant={account.is_active ? 'success' : 'secondary'}>{account.is_active ? 'Active' : 'Inactive'}</Badge>
+                            <Badge variant={account.is_active ? 'default' : 'secondary'}>{account.is_active ? 'Active' : 'Inactive'}</Badge>
                         </div>
                         <p>
                             <strong>Name:</strong> {account.account_name}
