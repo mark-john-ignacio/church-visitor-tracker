@@ -3,6 +3,7 @@ import type { Config } from 'ziggy-js';
 export interface Company {
     id: string;
     display_name: string;
+    name?: string;
     is_active: boolean;
 }
 
