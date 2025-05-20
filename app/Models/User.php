@@ -48,4 +48,14 @@ class User extends Authenticatable implements Auditable
             'password' => 'hashed',
         ];
     }
+    
+    /**
+     * Get the companies the user belongs to.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function companies()
+    {
+        return $this->belongsToMany(Company::class, 'user_companies');
+    }
 }

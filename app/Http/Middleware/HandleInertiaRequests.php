@@ -48,12 +48,37 @@ class HandleInertiaRequests extends Middleware
 
         $footerNavItems = $this->getNavItems($user, 'footer');
 
+        // Get active company from session for authenticated users
+        $activeCompanyId = null;
+        if ($user) {
+            $activeCompanyId = session('active_company_id');
+            
+            // If no active company is set in the session, try to determine it
+            if (!$activeCompanyId) {
+                // Try to get the user's primary company
+                $primaryCompany = $user->companies()
+                    ->wherePivot('is_primary', true)
+                    ->first();
+                
+                // If no primary company, get the first company
+                if (!$primaryCompany) {
+                    $primaryCompany = $user->companies()->first();
+                }
+                
+                if ($primaryCompany) {
+                    $activeCompanyId = $primaryCompany->id;
+                    session(['active_company_id' => $activeCompanyId]);
+                }
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
                 'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
                 'roles' => $user ? $user->roles->pluck('name') : [],
+                'active_company_id' => $activeCompanyId,
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),

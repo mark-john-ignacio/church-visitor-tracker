@@ -1,9 +1,17 @@
 import type { Config } from 'ziggy-js';
 
+export interface Company {
+    id: string;
+    display_name: string;
+    is_active: boolean;
+}
+
 export interface Auth {
     user: User;
     permissions?: string[];
     roles?: string[];
+    companies?: Company[];
+    active_company_id?: string;
 }
 
 export interface BreadcrumbItem {

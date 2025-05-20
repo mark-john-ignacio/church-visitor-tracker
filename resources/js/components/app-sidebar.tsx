@@ -1,3 +1,4 @@
+import { CompanySwitcher } from '@/components/company-switcher';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -38,6 +39,11 @@ export function AppSidebar() {
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                    {!isCollapsed && (
+                        <SidebarMenuItem>
+                            <CompanySwitcher />
+                        </SidebarMenuItem>
+                    )}
                 </SidebarMenu>
             </SidebarHeader>
 
