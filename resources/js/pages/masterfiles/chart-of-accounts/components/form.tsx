@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm as useInertiaForm } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -28,8 +29,8 @@ const formSchema = z.object({
     account_code: z.string().min(1, 'Account code is required'),
     account_name: z.string().min(1, 'Account name is required'),
     account_type: z.string().min(1, 'Account type is required'),
-    description: z.string().nullable(),
-    is_active: z.boolean().default(true),
+    description: z.string().nullable().optional(),
+    is_active: z.boolean(),
 });
 
 export function ChartOfAccountForm({ defaultValues, url, method, disabled = false }: ChartOfAccountFormProps) {
@@ -43,11 +44,33 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: data,
+        defaultValues: {
+            account_code: data.account_code,
+            account_name: data.account_name,
+            account_type: data.account_type,
+            description: data.description,
+            is_active: data.is_active,
+        },
     });
 
+    useEffect(() => {
+        form.reset({
+            account_code: data.account_code,
+            account_name: data.account_name,
+            account_type: data.account_type,
+            description: data.description,
+            is_active: data.is_active,
+        });
+    }, [data, form]);
+
     function onSubmit(values: z.infer<typeof formSchema>) {
-        setData(values);
+        setData({
+            account_code: values.account_code,
+            account_name: values.account_name,
+            account_type: values.account_type,
+            description: values.description || '',
+            is_active: values.is_active,
+        });
 
         if (method === 'post') {
             post(url);
@@ -67,9 +90,18 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                             <FormItem>
                                 <FormLabel>Account Code</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter account code" {...field} disabled={disabled} value={field.value || ''} />
+                                    <Input
+                                        placeholder="Enter account code"
+                                        {...field}
+                                        disabled={disabled}
+                                        onChange={(e) => {
+                                            field.onChange(e);
+                                            setData('account_code', e.target.value);
+                                        }}
+                                    />
                                 </FormControl>
                                 {errors.account_code && <FormMessage>{errors.account_code}</FormMessage>}
+                                {form.formState.errors.account_code && <FormMessage>{form.formState.errors.account_code.message}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -81,9 +113,18 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                             <FormItem>
                                 <FormLabel>Account Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter account name" {...field} disabled={disabled} value={field.value || ''} />
+                                    <Input
+                                        placeholder="Enter account name"
+                                        {...field}
+                                        disabled={disabled}
+                                        onChange={(e) => {
+                                            field.onChange(e);
+                                            setData('account_name', e.target.value);
+                                        }}
+                                    />
                                 </FormControl>
                                 {errors.account_name && <FormMessage>{errors.account_name}</FormMessage>}
+                                {form.formState.errors.account_name && <FormMessage>{form.formState.errors.account_name.message}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -96,7 +137,14 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Account Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={disabled}>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setData('account_type', value);
+                                    }}
+                                    value={field.value}
+                                    disabled={disabled}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select account type" />
@@ -111,17 +159,25 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     </SelectContent>
                                 </Select>
                                 {errors.account_type && <FormMessage>{errors.account_type}</FormMessage>}
+                                {form.formState.errors.account_type && <FormMessage>{form.formState.errors.account_type.message}</FormMessage>}
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="is_active"
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4">
                                 <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={disabled} />
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={(checked) => {
+                                            const boolValue = checked === true;
+                                            field.onChange(boolValue);
+                                            setData('is_active', boolValue);
+                                        }}
+                                        disabled={disabled}
+                                    />
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                     <FormLabel>Active</FormLabel>
@@ -144,6 +200,10 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     {...field}
                                     disabled={disabled}
                                     value={field.value || ''}
+                                    onChange={(e) => {
+                                        field.onChange(e);
+                                        setData('description', e.target.value);
+                                    }}
                                 />
                             </FormControl>
                             {errors.description && <FormMessage>{errors.description}</FormMessage>}
