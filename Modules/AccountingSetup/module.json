@@ -1,0 +1,11 @@
+{
+    "name": "AccountingSetup",
+    "alias": "accountingsetup",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AccountingSetup\\Providers\\AccountingSetupServiceProvider"
+    ],
+    "files": []
+}

@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/accountingsetup",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AccountingSetup\\": "app/",
+            "Modules\\AccountingSetup\\Database\\Factories\\": "database/factories/",
+            "Modules\\AccountingSetup\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\AccountingSetup\\Tests\\": "tests/"
+        }
+    }
+}
