@@ -24,6 +24,7 @@ class MenuItemsSeeder extends Seeder
         
         // Add Chart of Accounts permissions
         $viewMasterfilesPerm = Permission::firstOrCreate(['name' => 'view_masterfiles']);
+        $viewAccountingSetupPerm = Permission::firstOrCreate(['name' => 'view_accounting_setup']);
         $manageChartOfAccountsPerm = Permission::firstOrCreate(['name' => 'manage_chart_of_accounts']);
 
         // Create roles and assign permissions
@@ -31,7 +32,7 @@ class MenuItemsSeeder extends Seeder
         $superAdmin->givePermissionTo(Permission::all());
 
         $admin = Role::firstOrCreate(['name' => 'admin']);
-        $admin->givePermissionTo([$viewDashboardPerm, $viewAdminPerm, $manageUsersPerm, $viewMasterfilesPerm, $manageChartOfAccountsPerm]);
+        $admin->givePermissionTo([$viewDashboardPerm, $viewAdminPerm, $manageUsersPerm, $viewMasterfilesPerm, $manageChartOfAccountsPerm, $viewAccountingSetupPerm]);
 
         $user = Role::firstOrCreate(['name' => 'user']);
         $user->givePermissionTo('view_dashboard');
@@ -60,8 +61,19 @@ class MenuItemsSeeder extends Seeder
             ]
         );
 
+        $accountingSetupMenu = MenuItem::updateOrCreate(
+            ['name' => 'AccountingSetup','parent_id' => $masterfilesMenu->id],
+            [
+            'route' => null,
+            'icon' => 'Calculator',
+            'permission_name' => 'view_accounting_setup',
+            'order' => 1,
+            'type' => 'main'
+            ]
+        );
+
         MenuItem::updateOrCreate(
-            ['name' => 'Chart of Accounts', 'parent_id' => $masterfilesMenu->id],
+            ['name' => 'Chart of Accounts', 'parent_id' => $accountingSetupMenu->id],
             [
                 'route' => '/masterfiles/chart-of-accounts',
                 'icon' => 'BarChart2',

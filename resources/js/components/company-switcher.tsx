@@ -1,9 +1,9 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Skeleton } from '@/components/ui/skeleton'; // Make sure you have this component
+import { Skeleton } from '@/components/ui/skeleton';
 import { useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { Building } from 'lucide-react';
+import { Building, ChevronDown } from 'lucide-react';
 import { useEffect, useState, type ComponentPropsWithoutRef } from 'react';
 
 interface Company {
@@ -75,44 +75,52 @@ export function CompanySwitcher({ isCollapsed = false, className = '', ...props 
             });
     };
 
-    // Find active company when available
-    const activeCompany =
-        !loading && companies.length > 0 ? companies.find((company) => company.id === data.company_id || company.is_active) || companies[0] : null;
+    // Find active company
+    const activeCompany = !loading && companies.length > 0 ? companies.find((company) => company.id === data.company_id) || companies[0] : null;
 
     return (
         <SidebarGroup {...props} className={`group-data-[collapsible=icon]:p-0 ${className}`}>
             <SidebarGroupContent>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            asChild
-                            className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
-                            tooltip={isCollapsed ? { children: 'Switch Company', side: 'right' } : undefined}
-                        >
-                            <div className="flex w-full items-center">
-                                <Building className="mr-2 h-4 w-4" />
-                                {!isCollapsed &&
-                                    (loading ? (
-                                        // Show placeholder during loading to prevent layout shift
-                                        <div className="w-full">
+                        {isCollapsed ? (
+                            // Collapsed state - show just the icon with tooltip
+                            <SidebarMenuButton
+                                className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
+                                tooltip={{ children: 'Switch Company', side: 'right' }}
+                            >
+                                <Building className="h-4 w-4" />
+                            </SidebarMenuButton>
+                        ) : (
+                            // Expanded state - show dropdown menu
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild disabled={loading || processing}>
+                                    <SidebarMenuButton className="w-full justify-start text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
+                                        <Building className="mr-2 h-4 w-4" />
+                                        {loading ? (
                                             <Skeleton className="h-6 w-24" />
-                                        </div>
-                                    ) : (
-                                        <Select value={data.company_id} onValueChange={handleCompanyChange} disabled={processing}>
-                                            <SelectTrigger className="h-auto w-full border-none bg-transparent p-0 shadow-none">
-                                                <SelectValue placeholder="Select company" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {companies.map((company) => (
-                                                    <SelectItem key={company.id} value={company.id}>
-                                                        {company.display_name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        ) : (
+                                            <>
+                                                <span className="truncate">{activeCompany?.display_name || 'Select Company'}</span>
+                                                <ChevronDown className="ml-auto h-4 w-4" />
+                                            </>
+                                        )}
+                                    </SidebarMenuButton>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-[--radix-popper-anchor-width]" align="start">
+                                    {companies.map((company) => (
+                                        <DropdownMenuItem
+                                            key={company.id}
+                                            onClick={() => handleCompanyChange(company.id)}
+                                            className={company.id === data.company_id ? 'bg-accent' : ''}
+                                        >
+                                            <span>{company.display_name}</span>
+                                            {company.id === data.company_id && <span className="text-muted-foreground ml-auto text-xs">Active</span>}
+                                        </DropdownMenuItem>
                                     ))}
-                            </div>
-                        </SidebarMenuButton>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarGroupContent>

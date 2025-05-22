@@ -123,7 +123,7 @@ class HandleInertiaRequests extends Middleware
      * @param string $type
      * @return array
      */
-    protected function getNavItems($user, string $type):array
+    protected function getNavItems($user, string $type): array
     {
         if (!$user) {
             return [];
@@ -136,8 +136,8 @@ class HandleInertiaRequests extends Middleware
 
         $navItems = [];
 
-        foreach ($items as $item){
-            if($item->permission_name && !$user->can($item->permission_name)){
+        foreach ($items as $item) {
+            if ($item->permission_name && !$user->can($item->permission_name)) {
                 continue;
             }
 
@@ -147,31 +147,56 @@ class HandleInertiaRequests extends Middleware
             ];
 
             // Add the icon if it exists
-            if($item->icon){
+            if ($item->icon) {
                 $navItem['icon'] = $item->icon;
             }
 
-            //Process children if any
+            // Process children if any - First level children
             $children = $item->children()
                 ->orderBy('order')
                 ->get()
-                ->filter(function ($child) use ($user){
+                ->filter(function ($child) use ($user) {
                     return !$child->permission_name || $user->can($child->permission_name);
                 });
-            if ($children->count() > 0){
-                $navItem['children'] = $children->map(function ($child){
+
+            if ($children->count() > 0) {
+                $navItem['children'] = $children->map(function ($child) use ($user) {
                     $childItem = [
                         'title' => $child->name,
                         'href' => $child->route,
                     ];
 
-                    if($child->icon){
+                    if ($child->icon) {
                         $childItem['icon'] = $child->icon;
+                    }
+
+                    // Process grandchildren if any - Second level children
+                    $grandchildren = $child->children()
+                        ->orderBy('order')
+                        ->get()
+                        ->filter(function ($grandchild) use ($user) {
+                            return !$grandchild->permission_name || $user->can($grandchild->permission_name);
+                        });
+
+                    if ($grandchildren->count() > 0) {
+                        $childItem['children'] = $grandchildren->map(function ($grandchild) {
+                            $grandchildItem = [
+                                'title' => $grandchild->name,
+                                'href' => $grandchild->route,
+                            ];
+
+                            if ($grandchild->icon) {
+                                $grandchildItem['icon'] = $grandchild->icon;
+                            }
+
+                            return $grandchildItem;
+                        })->values()->toArray();
                     }
 
                     return $childItem;
                 })->values()->toArray();
             }
+
             $navItems[] = $navItem;
         }
 

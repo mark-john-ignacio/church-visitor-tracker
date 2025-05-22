@@ -1,8 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\AccountingSetup\Http\Controllers\AccountingSetupController;
+use Modules\AccountingSetup\Http\Controllers\ChartOfAccountController;
+use App\Http\Middleware\InitializeTenancyBySession;
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('accountingsetups', AccountingSetupController::class)->names('accountingsetup');
-});
+Route::middleware(['web', 'auth', InitializeTenancyBySession::class])
+    ->group(function () {
+        Route::middleware(['can:manage_chart_of_accounts'])
+            ->prefix('masterfiles')
+            ->name('masterfiles.')
+            ->group(function () {
+                Route::resource('chart-of-accounts', ChartOfAccountController::class);
+            });
+        });

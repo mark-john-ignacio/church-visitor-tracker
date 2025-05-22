@@ -44,13 +44,6 @@ Route::middleware(['web', 'auth', InitializeTenancyBySession::class])
                 Route::get('list', [CompanySwitcherController::class, 'getCompanies'])->name('list');
             });
 
-        Route::middleware(['can:manage_chart_of_accounts'])
-            ->prefix('masterfiles')
-            ->name('masterfiles.')
-            ->group(function () {
-                Route::resource('chart-of-accounts', \App\Http\Controllers\Masterfiles\ChartOfAccountController::class);
-            });
-
         // Settings routes
         require __DIR__.'/settings.php';
     });
