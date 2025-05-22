@@ -17,15 +17,13 @@ class ChartOfAccountController extends Controller
      */
     public function index(Request $request)
     {
-        // Get the current tenant/company
-        $companyId = tenant()->id;
         
-        $query = ChartOfAccount::where('company_id', $companyId);
+        $query = ChartOfAccount::query();
         
         // Search functionality
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
                 $q->where('account_code', 'like', "%{$search}%")
                   ->orWhere('account_name', 'like', "%{$search}%")
                   ->orWhere('account_type', 'like', "%{$search}%")
@@ -33,13 +31,31 @@ class ChartOfAccountController extends Controller
             });
         }
         
-        // Sorting
-        $sort = $request->input('sort', 'account_code');
-        $order = $request->input('order', 'asc');
-        $query->orderBy($sort, $order);
+        if ($request->has('sort') && !empty($request->sort)) {
+            $sortColumn = $request->sort;
+            $sortDirection = $request->order ?? 'asc';
+            
+            // Validate sort direction
+            if (!in_array($sortDirection, ['asc', 'desc'])) {
+                $sortDirection = 'asc';
+            }
+            
+            // List of allowed sortable columns for security
+            $allowedColumns = ['account_code', 'account_name', 'account_type', 'created_at', 'is_active'];
+            
+            if (in_array($sortColumn, $allowedColumns)) {
+                $query->orderBy($sortColumn, $sortDirection);
+            } else {
+                // Default sort if invalid column provided
+                $query->latest();
+            }
+        } else {
+            // Default sort by created_at desc
+            $query->latest();
+        }
         
         // Pagination
-        $accounts = $query->paginate(10)->withQueryString();
+        $accounts = $query->paginate(15)->withQueryString();
         
         return Inertia::render('masterfiles/chart-of-accounts/index', [
             'accounts' => $accounts,
@@ -64,7 +80,6 @@ class ChartOfAccountController extends Controller
      */
     public function store(Request $request)
     {
-        $companyId = tenant()->id;
         
         $validated = $request->validate([
             'account_code' => [
@@ -72,9 +87,8 @@ class ChartOfAccountController extends Controller
                 'string',
                 'max:50',
                 // Ensure account code is unique within this company
-                function ($attribute, $value, $fail) use ($companyId) {
-                    $exists = ChartOfAccount::where('company_id', $companyId)
-                        ->where('account_code', $value)
+                function ($attribute, $value, $fail) {
+                    $exists = ChartOfAccount::where('account_code', $value)
                         ->exists();
                     
                     if ($exists) {
@@ -87,9 +101,6 @@ class ChartOfAccountController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
-        
-        // Set company ID from the current tenant
-        $validated['company_id'] = $companyId;
         
         ChartOfAccount::create($validated);
         
@@ -140,8 +151,7 @@ class ChartOfAccountController extends Controller
                 'max:50',
                 // Ensure account code is unique within this company, excluding this record
                 function ($attribute, $value, $fail) use ($companyId, $chartOfAccount) {
-                    $exists = ChartOfAccount::where('company_id', $companyId)
-                        ->where('account_code', $value)
+                    $exists = ChartOfAccount::where('account_code', $value)
                         ->where('id', '!=', $chartOfAccount->id)
                         ->exists();
                     
@@ -179,7 +189,6 @@ class ChartOfAccountController extends Controller
         
         $chartOfAccount->delete();
         
-        return redirect()->route('masterfiles.chart-of-accounts.index')
-            ->with('success', 'Account deleted successfully');
+        return redirect()->route('masterfiles.chart-of-accounts.index');
     }
 }
