@@ -26,6 +26,7 @@ class MenuItemsSeeder extends Seeder
         $viewMasterfilesPerm = Permission::firstOrCreate(['name' => 'view_masterfiles']);
         $viewAccountingSetupPerm = Permission::firstOrCreate(['name' => 'view_accounting_setup']);
         $manageChartOfAccountsPerm = Permission::firstOrCreate(['name' => 'manage_chart_of_accounts']);
+        $manageBanksPerm = Permission::firstOrCreate(['name' => 'manage_banks']);
 
         // Create roles and assign permissions
         $superAdmin = Role::firstOrCreate(['name'=>'super_admin']);
@@ -65,7 +66,7 @@ class MenuItemsSeeder extends Seeder
             ['name' => 'AccountingSetup','parent_id' => $masterfilesMenu->id],
             [
             'route' => null,
-            'icon' => 'Calculator',
+            'icon' => 'Calculator', 
             'permission_name' => 'view_accounting_setup',
             'order' => 1,
             'type' => 'main'
@@ -79,6 +80,17 @@ class MenuItemsSeeder extends Seeder
                 'icon' => 'BarChart2',
                 'permission_name' => 'manage_chart_of_accounts',
                 'order' => 1,
+                'type' => 'main'
+            ]
+        );
+
+        MenuItem::updateOrCreate(
+            ['name' => 'Banks', 'parent_id' => $accountingSetupMenu->id],
+            [
+                'route' => '/masterfiles/banks',
+                'icon' => 'CreditCard',
+                'permission_name' => 'manage_banks',
+                'order' => 2,
                 'type' => 'main'
             ]
         );

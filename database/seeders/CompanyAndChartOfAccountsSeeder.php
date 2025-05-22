@@ -31,21 +31,22 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
         // We'll create fresh companies without truncating
 
         // Create test companies directly using the DB facade
-        $companyAId = DB::table('companies')->insertGetId([
-            'name' => 'Company A',
+        $companyAId = Company::firstOrCreate(
+            ['name' => 'Company A'],
+            [
             'display_name' => 'Company A, Inc.',
             'created_at' => now(),
             'updated_at' => now(),
             'data' => json_encode(['is_active' => true]),
-        ]);
+        ])->id;
 
-        $companyBId = DB::table('companies')->insertGetId([
-            'name' => 'Company B',
-            'display_name' => 'Company B, LLC',
+        $companyBId = Company::firstOrCreate(
+            ['name' => 'Company B'],
+            ['display_name' => 'Company B, LLC',
             'created_at' => now(),
             'updated_at' => now(),
             'data' => json_encode(['is_active' => true]),
-        ]);
+            ])->id;
         
         // Get model instances for the seeded companies
         $companyA = Company::find($companyAId);
