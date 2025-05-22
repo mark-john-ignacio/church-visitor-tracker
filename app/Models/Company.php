@@ -28,9 +28,7 @@ class Company extends BaseTenant implements TenantWithDatabase
      * @var array<string>
      */
     protected $fillable = [
-        'name', 
-        'display_name',
-        'data',
+
     ];
     
     /**

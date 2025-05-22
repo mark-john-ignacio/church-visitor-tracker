@@ -63,7 +63,7 @@ class MenuItemsSeeder extends Seeder
         );
 
         $accountingSetupMenu = MenuItem::updateOrCreate(
-            ['name' => 'AccountingSetup','parent_id' => $masterfilesMenu->id],
+            ['name' => 'Accounting','parent_id' => $masterfilesMenu->id],
             [
             'route' => null,
             'icon' => 'Calculator', 

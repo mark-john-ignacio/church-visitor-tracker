@@ -28,55 +28,65 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
             ]
         );
 
-        // We'll create fresh companies without truncating
+        $user->assignRole('super_admin');
 
-        // Create test companies directly using the DB facade
-        $companyAId = Company::firstOrCreate(
-            ['name' => 'Company A'],
-            [
+    $companyA = Company::where('name', 'Company A')->first();
+    if (!$companyA) {
+        $companyAId = DB::table('companies')->insertGetId([
+            'name' => 'Company A',
             'display_name' => 'Company A, Inc.',
+            'data' => json_encode(['is_active' => true]),
             'created_at' => now(),
             'updated_at' => now(),
-            'data' => json_encode(['is_active' => true]),
-        ])->id;
-
-        $companyBId = Company::firstOrCreate(
-            ['name' => 'Company B'],
-            ['display_name' => 'Company B, LLC',
-            'created_at' => now(),
-            'updated_at' => now(),
-            'data' => json_encode(['is_active' => true]),
-            ])->id;
-        
-        // Get model instances for the seeded companies
+        ]);
         $companyA = Company::find($companyAId);
+        
+        // Only attach user if the company was newly created
+        $user->companies()->attach($companyA->id, ['is_primary' => true]);
+    }
+
+    // Check if Company B exists before creating it
+    $companyB = Company::where('name', 'Company B')->first();
+    if (!$companyB) {
+        $companyBId = DB::table('companies')->insertGetId([
+            'name' => 'Company B',
+            'display_name' => 'Company B, LLC',
+            'data' => json_encode(['is_active' => true]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         $companyB = Company::find($companyBId);
         
-                // Associate user with both companies
-        $user->companies()->attach($companyA->id, ['is_primary' => true]);
+        // Only attach user if the company was newly created
         $user->companies()->attach($companyB->id, ['is_primary' => false]);
+    }
+        
 
         // Create chart of accounts for Company A
         $tenancy = app(Tenancy::class);
         $tenancy->initialize($companyA);
 
-        ChartOfAccount::create([
-            'company_id' => $companyA->id,
-            'account_code' => '1000',
-            'account_name' => 'Cash',
-            'account_type' => 'Asset',
-            'description' => 'Cash on hand',
-            'is_active' => true,
-        ]);
+        if (!ChartOfAccount::where('account_code', '1000')->exists()) {
+            ChartOfAccount::create([
+                'company_id' => $companyA->id,
+                'account_code' => '1000',
+                'account_name' => 'Cash',
+                'account_type' => 'Asset',
+                'description' => 'Cash on hand',
+                'is_active' => true,
+            ]);
+        }
 
-        ChartOfAccount::create([
-            'company_id' => $companyA->id,
-            'account_code' => '2000',
-            'account_name' => 'Accounts Payable',
-            'account_type' => 'Liability',
-            'description' => 'Money owed to suppliers',
-            'is_active' => true,
-        ]);
+        if (!ChartOfAccount::where('account_code', '2000')->exists()) {
+            ChartOfAccount::create([
+                'company_id' => $companyA->id,
+                'account_code' => '2000',
+                'account_name' => 'Accounts Payable',
+                'account_type' => 'Liability',
+                'description' => 'Money owed to suppliers',
+                'is_active' => true,
+            ]);
+        }
 
         // End tenancy for Company A
         $tenancy->end();
@@ -84,24 +94,27 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
         // Create chart of accounts for Company B
         $tenancy->initialize($companyB);
 
-        ChartOfAccount::create([
-            'company_id' => $companyB->id,
-            'account_code' => 'B1000',
-            'account_name' => 'Bank Account',
-            'account_type' => 'Asset',
-            'description' => 'Main bank account',
-            'is_active' => true,
-        ]);
+        if (!ChartOfAccount::where('account_code', 'B1000')->exists()) {
+            ChartOfAccount::create([
+                'company_id' => $companyB->id,
+                'account_code' => 'B1000',
+                'account_name' => 'Bank Account',
+                'account_type' => 'Asset',
+                'description' => 'Main bank account',
+                'is_active' => true,
+            ]);
+        }
 
-        ChartOfAccount::create([
-            'company_id' => $companyB->id,
-            'account_code' => 'B3000',
-            'account_name' => 'Equipment',
-            'account_type' => 'Asset',
-            'description' => 'Office equipment',
-            'is_active' => true,
-        ]);
-
+        if (!ChartOfAccount::where('account_code', 'B3000')->exists()) {
+            ChartOfAccount::create([
+                'company_id' => $companyB->id,
+                'account_code' => 'B3000',
+                'account_name' => 'Equipment',
+                'account_type' => 'Asset',
+                'description' => 'Office equipment',
+                'is_active' => true,
+            ]);
+        }
         ChartOfAccount::create([
             'company_id' => $companyB->id,
             'account_code' => 'B5000',
