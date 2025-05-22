@@ -1,6 +1,5 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSkeleton } from '@/components/ui/sidebar';
 import { useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Building, ChevronDown } from 'lucide-react';
@@ -98,7 +97,7 @@ export function CompanySwitcher({ isCollapsed = false, className = '', ...props 
                                     <SidebarMenuButton className="w-full justify-start text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
                                         <Building className="mr-2 h-4 w-4" />
                                         {loading ? (
-                                            <Skeleton className="h-6 w-24" />
+                                            <SidebarMenuSkeleton />
                                         ) : (
                                             <>
                                                 <span className="truncate">{activeCompany?.display_name || 'Select Company'}</span>
