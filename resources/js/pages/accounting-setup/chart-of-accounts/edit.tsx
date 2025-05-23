@@ -11,8 +11,9 @@ interface EditChartOfAccountProps extends PageProps {
 export default function EditChartOfAccount({ account }: EditChartOfAccountProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Masterfiles', href: '#' },
-        { title: 'Chart of Accounts', href: route('masterfiles.chart-of-accounts.index') },
-        { title: 'Edit', href: route('masterfiles.chart-of-accounts.edit', account.id) },
+        { title: 'Accounting Setup', href: '#' },
+        { title: 'Chart of Accounts', href: route('accounting-setup.chart-of-accounts.index') },
+        { title: 'Edit', href: route('accounting-setup.chart-of-accounts.edit', account.id) },
     ];
 
     const defaultValues = {
@@ -35,7 +36,7 @@ export default function EditChartOfAccount({ account }: EditChartOfAccountProps)
                     <CardContent>
                         <ChartOfAccountForm
                             defaultValues={defaultValues}
-                            url={route('masterfiles.chart-of-accounts.update', account.id)}
+                            url={route('accounting-setup.chart-of-accounts.update', account.id)}
                             method="put"
                         />
                     </CardContent>

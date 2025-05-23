@@ -76,7 +76,7 @@ class MenuItemsSeeder extends Seeder
         MenuItem::updateOrCreate(
             ['name' => 'Chart of Accounts', 'parent_id' => $accountingSetupMenu->id],
             [
-                'route' => '/masterfiles/chart-of-accounts',
+                'route' => '/accounting-setup/chart-of-accounts',
                 'icon' => 'BarChart2',
                 'permission_name' => 'manage_chart_of_accounts',
                 'order' => 1,
@@ -87,7 +87,7 @@ class MenuItemsSeeder extends Seeder
         MenuItem::updateOrCreate(
             ['name' => 'Banks', 'parent_id' => $accountingSetupMenu->id],
             [
-                'route' => '/masterfiles/banks',
+                'route' => '/accounting-setup/banks',
                 'icon' => 'CreditCard',
                 'permission_name' => 'manage_banks',
                 'order' => 2,

@@ -57,7 +57,7 @@ class ChartOfAccountController extends Controller
         // Pagination
         $accounts = $query->paginate(15)->withQueryString();
         
-        return Inertia::render('masterfiles/chart-of-accounts/index', [
+        return Inertia::render('accounting-setup/chart-of-accounts/index', [
             'accounts' => $accounts,
         ]);
     }
@@ -69,7 +69,7 @@ class ChartOfAccountController extends Controller
      */
     public function create()
     {
-        return Inertia::render('masterfiles/chart-of-accounts/create');
+        return Inertia::render('accounting-setup/chart-of-accounts/create');
     }
     
     /**
@@ -104,7 +104,7 @@ class ChartOfAccountController extends Controller
         
         ChartOfAccount::create($validated);
         
-        return redirect()->route('masterfiles.chart-of-accounts.index')
+        return redirect()->route('accounting-setup.chart-of-accounts.index')
             ->with('success', 'Account created successfully');
     }
     
@@ -123,7 +123,7 @@ class ChartOfAccountController extends Controller
             abort(403, 'Unauthorized action');
         }
         
-        return Inertia::render('masterfiles/chart-of-accounts/edit', [
+        return Inertia::render('accounting-setup/chart-of-accounts/edit', [
             'account' => $chartOfAccount
         ]);
     }
@@ -168,7 +168,7 @@ class ChartOfAccountController extends Controller
         
         $chartOfAccount->update($validated);
         
-        return redirect()->route('masterfiles.chart-of-accounts.index')
+        return redirect()->route('accounting-setup.chart-of-accounts.index')
             ->with('success', 'Account updated successfully');
     }
     
@@ -189,6 +189,6 @@ class ChartOfAccountController extends Controller
         
         $chartOfAccount->delete();
         
-        return redirect()->route('masterfiles.chart-of-accounts.index');
+        return redirect()->route('accounting-setup.chart-of-accounts.index');
     }
 }

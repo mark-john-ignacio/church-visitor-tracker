@@ -6,8 +6,9 @@ import { ChartOfAccountForm } from './components/form';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Masterfiles', href: '#' },
-    { title: 'Chart of Accounts', href: route('masterfiles.chart-of-accounts.index') },
-    { title: 'Create', href: route('masterfiles.chart-of-accounts.create') },
+    { title: 'Accounting Setup', href: '#' },
+    { title: 'Chart of Accounts', href: route('accounting-setup.chart-of-accounts.index') },
+    { title: 'Create', href: route('accounting-setup.chart-of-accounts.create') },
 ];
 
 export default function CreateChartOfAccount({}: PageProps) {
@@ -29,7 +30,7 @@ export default function CreateChartOfAccount({}: PageProps) {
                         <CardDescription>Add a new account to the chart of accounts.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartOfAccountForm defaultValues={defaultValues} url={route('masterfiles.chart-of-accounts.store')} method="post" />
+                        <ChartOfAccountForm defaultValues={defaultValues} url={route('accounting-setup.chart-of-accounts.store')} method="post" />
                     </CardContent>
                 </Card>
             </div>

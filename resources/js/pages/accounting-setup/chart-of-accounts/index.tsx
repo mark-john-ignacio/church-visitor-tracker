@@ -15,7 +15,8 @@ interface ChartOfAccountsPageProps extends PageProps {
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Masterfiles', href: '#' },
-    { title: 'Chart of Accounts', href: route('masterfiles.chart-of-accounts.index') },
+    { title: 'Accounting Setup', href: '#' },
+    { title: 'Chart of Accounts', href: route('accounting-setup.chart-of-accounts.index') },
 ];
 
 // Extract columns for better type inference and readability
@@ -46,7 +47,7 @@ const accountColumns: Column<ChartOfAccount>[] = [
 
 export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPageProps) {
     const handleDelete = useCallback((id: number) => {
-        router.delete(route('masterfiles.chart-of-accounts.destroy', id), {
+        router.delete(route('accounting-setup.chart-of-accounts.destroy', id), {
             onSuccess: () => {
                 toast.success('Account deleted successfully');
             },
@@ -62,7 +63,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
 
     const handleSearch = useCallback((searchTerm: string) => {
         router.get(
-            route('masterfiles.chart-of-accounts.index'),
+            route('accounting-setup.chart-of-accounts.index'),
             { search: searchTerm },
             {
                 preserveState: true,
@@ -73,7 +74,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
 
     const handleSort = useCallback((column: string, direction: SortDirection) => {
         router.get(
-            route('masterfiles.chart-of-accounts.index'),
+            route('accounting-setup.chart-of-accounts.index'),
             {
                 sort: column,
                 order: direction,
@@ -108,7 +109,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                         <p className="text-muted-foreground text-xs">Created: {new Date(account.created_at).toLocaleDateString()}</p>
                         <div className="flex justify-end gap-2 pt-2">
                             <Button asChild size="sm" variant="outline">
-                                <Link href={route('masterfiles.chart-of-accounts.edit', account.id)}>Edit</Link>
+                                <Link href={route('accounting-setup.chart-of-accounts.edit', account.id)}>Edit</Link>
                             </Button>
                             <Button
                                 variant="destructive"
@@ -136,7 +137,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                         <CardDescription>Manage your company's chart of accounts. This data is company-specific.</CardDescription>
                         <div className="flex justify-end gap-2">
                             <Button asChild size="sm">
-                                <Link href={route('masterfiles.chart-of-accounts.create')}>Create Account</Link>
+                                <Link href={route('accounting-setup.chart-of-accounts.create')}>Create Account</Link>
                             </Button>
                         </div>
                     </CardHeader>
@@ -144,7 +145,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                     <CardContent className="space-y-6">
                         <CrudIndex
                             resource="chart-of-accounts"
-                            routePrefix="masterfiles"
+                            routePrefix="accounting-setup"
                             rows={accounts.data}
                             columns={accountColumns}
                             renderMobile={renderMobile}

@@ -7,8 +7,8 @@ use App\Http\Middleware\InitializeTenancyBySession;
 Route::middleware(['web', 'auth', InitializeTenancyBySession::class])
     ->group(function () {
         Route::middleware(['can:manage_chart_of_accounts'])
-            ->prefix('masterfiles')
-            ->name('masterfiles.')
+            ->prefix('accounting-setup')
+            ->name('accounting-setup.')
             ->group(function () {
                 Route::resource('chart-of-accounts', ChartOfAccountController::class);
             });
