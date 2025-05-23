@@ -19,30 +19,39 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Chart of Accounts', href: route('accounting-setup.chart-of-accounts.index') },
 ];
 
-// Extract columns for better type inference and readability
 const accountColumns: Column<ChartOfAccount>[] = [
     { label: 'Code', key: 'account_code', sortable: true },
     { label: 'Name', key: 'account_name', sortable: true },
     { label: 'Type', key: 'account_type', sortable: true },
+    { label: 'Nature', key: 'account_nature', sortable: true },
+    { label: 'Level', key: 'level', sortable: true, className: 'text-center' },
     {
-        label: 'Description',
-        key: 'description',
-        render: (account: ChartOfAccount) => account.description || '-',
+        label: 'Header Acc.',
+        key: 'header_account_id',
+        sortable: false, // Sorting by ID might not be intuitive, consider sorting by header_account.name if needed
+        render: (account: ChartOfAccount) =>
+            account.header_account ? `${account.header_account.account_code} - ${account.header_account.account_name}` : 'N/A',
+    },
+    {
+        label: 'Contra',
+        key: 'is_contra_account',
+        sortable: true,
+        className: 'text-center',
+        render: (account: ChartOfAccount) => (
+            <Badge variant={account.is_contra_account ? 'destructive' : 'outline'}>{account.is_contra_account ? 'Yes' : 'No'}</Badge>
+        ),
     },
     {
         label: 'Status',
         key: 'is_active',
         sortable: true,
+        className: 'text-center',
         render: (account: ChartOfAccount) => (
             <Badge variant={account.is_active ? 'default' : 'secondary'}>{account.is_active ? 'Active' : 'Inactive'}</Badge>
         ),
     },
-    {
-        label: 'Created',
-        key: 'created_at',
-        sortable: true,
-        render: (account: ChartOfAccount) => new Date(account.created_at).toLocaleDateString(),
-    },
+    // { label: 'Description', key: 'description', render: (account: ChartOfAccount) => account.description || '-' }, // Optional
+    // { label: 'Created', key: 'created_at', sortable: true, render: (account: ChartOfAccount) => new Date(account.created_at).toLocaleDateString() }, // Optional
 ];
 
 export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPageProps) {
@@ -89,24 +98,38 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
     const renderMobile = useMemo(
         () => (rows: ChartOfAccount[]) =>
             rows.map((account) => (
-                <Card key={account.id} className="border">
-                    <CardContent className="space-y-1 p-4">
+                <Card key={account.id} className="mb-4 border">
+                    <CardContent className="space-y-2 p-4">
                         <div className="flex items-center justify-between">
-                            <p className="font-medium">{account.account_code}</p>
+                            <p className="text-lg font-medium">
+                                {account.account_code} - {account.account_name}
+                            </p>
                             <Badge variant={account.is_active ? 'default' : 'secondary'}>{account.is_active ? 'Active' : 'Inactive'}</Badge>
                         </div>
-                        <p>
-                            <strong>Name:</strong> {account.account_name}
-                        </p>
-                        <p>
-                            <strong>Type:</strong> {account.account_type}
-                        </p>
-                        {account.description && (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                             <p>
-                                <strong>Description:</strong> {account.description}
+                                <strong>Type:</strong> {account.account_type}
+                            </p>
+                            <p>
+                                <strong>Nature:</strong> {account.account_nature}
+                            </p>
+                            <p>
+                                <strong>Level:</strong> {account.level}
+                            </p>
+                            <p>
+                                <strong>Contra:</strong> {account.is_contra_account ? 'Yes' : 'No'}
+                            </p>
+                            {account.level > 1 && account.header_account && (
+                                <p className="col-span-2">
+                                    <strong>Header:</strong> {account.header_account.account_code} - {account.header_account.account_name}
+                                </p>
+                            )}
+                        </div>
+                        {account.description && (
+                            <p className="text-muted-foreground text-sm">
+                                <strong>Desc:</strong> {account.description}
                             </p>
                         )}
-                        <p className="text-muted-foreground text-xs">Created: {new Date(account.created_at).toLocaleDateString()}</p>
                         <div className="flex justify-end gap-2 pt-2">
                             <Button asChild size="sm" variant="outline">
                                 <Link href={route('accounting-setup.chart-of-accounts.edit', account.id)}>Edit</Link>

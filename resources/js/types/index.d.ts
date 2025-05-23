@@ -88,4 +88,31 @@ export interface ChartOfAccount {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+
+    account_nature: 'General' | 'Detail';
+    is_contra_account: boolean;
+    level: number;
+    header_account_id: number | null;
+    header_account?: {
+        id: number;
+        account_code: string;
+        account_name: string;
+    } | null;
+}
+
+export interface HeaderAccountOption {
+    id: number;
+    account_code: string;
+    account_name: string;
+    label?: string;
+    value?: number;
+}
+
+export interface ChartOfAccountCreatePageProps extends PageProps {
+    headerAccounts: HeaderAccountOption[];
+}
+
+export interface ChartOfAccountEditPageProps extends PageProps {
+    account: ChartOfAccount;
+    headerAccounts: HeaderAccountOption[];
 }

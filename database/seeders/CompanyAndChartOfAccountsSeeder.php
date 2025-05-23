@@ -70,9 +70,13 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
             ChartOfAccount::create([
                 'company_id' => $companyA->id,
                 'account_code' => '1000',
-                'account_name' => 'Cash',
+                'account_name' => 'Assets (General)',
                 'account_type' => 'Asset',
-                'description' => 'Cash on hand',
+                'account_nature' => 'General', 
+                'is_contra_account' => false, 
+                'level' => 1, 
+                'header_account_id' => null,
+                'description' => 'Main asset group',
                 'is_active' => true,
             ]);
         }
@@ -80,10 +84,14 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
         if (!ChartOfAccount::where('account_code', '2000')->exists()) {
             ChartOfAccount::create([
                 'company_id' => $companyA->id,
-                'account_code' => '2000',
-                'account_name' => 'Accounts Payable',
-                'account_type' => 'Liability',
-                'description' => 'Money owed to suppliers',
+                'account_code' => '1100',
+                'account_name' => 'Cash', // Example: Level 2 Detail Account under '1000'
+                'account_type' => 'Asset',
+                'account_nature' => 'Detail', // New
+                'is_contra_account' => false, // New
+                'level' => 2, // New
+                'header_account_id' => ChartOfAccount::where('company_id', $companyA->id)->where('account_code', '1000')->first()->id, // New
+                'description' => 'Cash on hand and in bank',
                 'is_active' => true,
             ]);
         }
@@ -100,6 +108,10 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
                 'account_code' => 'B1000',
                 'account_name' => 'Bank Account',
                 'account_type' => 'Asset',
+                'account_nature' => 'General',
+                'is_contra_account' => false, 
+                'level' => 1,
+                'header_account_id' => null,
                 'description' => 'Main bank account',
                 'is_active' => true,
             ]);
@@ -111,6 +123,10 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
                 'account_code' => 'B3000',
                 'account_name' => 'Equipment',
                 'account_type' => 'Asset',
+                'account_nature' => 'Detail',
+                'is_contra_account' => false,
+                'level' => 2,
+                'header_account_id' => ChartOfAccount::where('company_id', $companyB->id)->where('account_code', 'B1000')->first()->id, // New,
                 'description' => 'Office equipment',
                 'is_active' => true,
             ]);
@@ -120,6 +136,10 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
             'account_code' => 'B5000',
             'account_name' => 'Revenue',
             'account_type' => 'Income',
+            'account_nature' => 'Detail',
+            'is_contra_account' => false,
+            'level' => 2,
+            'header_account_id' => ChartOfAccount::where('company_id', $companyB->id)->where('account_code', 'B1000')->first()->id,
             'description' => 'Main revenue account',
             'is_active' => true,
         ]);
