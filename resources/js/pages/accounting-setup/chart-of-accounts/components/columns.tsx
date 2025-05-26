@@ -1,5 +1,6 @@
 'use client';
 
+import { useDeleteConfirmation } from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -78,17 +79,24 @@ export const chartOfAccountsColumns: ColumnDef<ChartOfAccount>[] = [
         id: 'actions',
         cell: ({ row }) => {
             const account = row.original;
+            const { confirmDelete } = useDeleteConfirmation();
 
             const handleDelete = () => {
-                router.delete(route('accounting-setup.chart-of-accounts.destroy', account.id), {
-                    onSuccess: () => {
-                        toast.success('Account deleted successfully');
-                    },
-                    onError: (errors) => {
-                        const errorMessage = errors.default || 'Failed to delete account';
-                        toast.error(errorMessage);
-                    },
-                });
+                const deleteAction = () => {
+                    router.delete(route('accounting-setup.chart-of-accounts.destroy', account.id), {
+                        onSuccess: () => {
+                            toast.success('Account deleted successfully');
+                        },
+                        onError: (errors) => {
+                            const errorMessage = errors.default || 'Failed to delete account';
+                            toast.error(errorMessage);
+                        },
+                    });
+                };
+
+                const customMessage = `Are you sure you want to delete the account "${account.account_code} - ${account.account_name}"? This action cannot be undone.`;
+
+                confirmDelete(account, deleteAction, customMessage);
             };
 
             return (

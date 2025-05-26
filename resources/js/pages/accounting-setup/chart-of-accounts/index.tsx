@@ -17,6 +17,11 @@ const BREADCRUMBS: BreadcrumbItem[] = [
 ];
 
 export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPageProps) {
+    // Custom delete confirmation message function
+    const getDeleteConfirmationMessage = (account: ChartOfAccount) => {
+        return `Are you sure you want to delete the account "${account.account_code} - ${account.account_name}"? This action cannot be undone and may affect related transactions.`;
+    };
+
     return (
         <AppLayout breadcrumbs={BREADCRUMBS}>
             <Head title="Chart of Accounts" />
@@ -41,7 +46,8 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                             data={accounts.data}
                             searchColumn="account_name"
                             searchPlaceholder="Filter accounts..."
-                            tableKey="chart-of-accounts" // Unique key for this table
+                            tableKey="chart-of-accounts"
+                            getDeleteConfirmationMessage={getDeleteConfirmationMessage}
                         />
                     </CardContent>
                 </Card>
