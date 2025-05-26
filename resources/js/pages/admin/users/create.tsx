@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, PageProps } from '@/types';
 import { Head } from '@inertiajs/react';
 import { UserForm } from './components/UserForm';
 

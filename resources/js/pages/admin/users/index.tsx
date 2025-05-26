@@ -7,6 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PageProps, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useMemo } from 'react';
+import { toast } from 'sonner';
 
 interface UsersPageProps extends PageProps {
     users: LaravelPaginator<User>;

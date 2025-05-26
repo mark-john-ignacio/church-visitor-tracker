@@ -125,7 +125,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                     render={({ field }) => (
                         <FormItem>
                             <fieldset>
-                                <FormLabel as="legend">Roles</FormLabel>
+                                <FormLabel className="text-base font-medium">Roles</FormLabel>
                                 <FormControl>
                                     <Controller
                                         name="roles"

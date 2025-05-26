@@ -131,9 +131,7 @@ export default function PermissionsIndex({ permissions }: PermissionsPageProps) 
                             searchable={true}
                             onSearch={handleSearch}
                             onSort={handleSort}
-                            rowActions={(row: Permission) =>
-                                isSystemPermission(row.name) ? [{ label: 'View', href: route('admin.permissions.edit', row.id) }] : undefined
-                            }
+                            canDelete={(row: Permission) => !isSystemPermission(row.name)}
                         />
                     </CardContent>
                 </Card>

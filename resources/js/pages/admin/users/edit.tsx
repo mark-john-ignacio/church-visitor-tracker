@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, PageProps, User } from '@/types';
 import { Head } from '@inertiajs/react';
 import { UserForm } from './components/UserForm';
 
@@ -20,12 +20,31 @@ export default function EditUser({ user, roles, isSuperAdmin, canEdit, superAdmi
         { title: canEdit ? 'Edit' : 'View', href: route('admin.users.edit', user.id) },
     ];
 
-    const defaultValues = {
+    interface UserRole {
+        name: string;
+    }
+
+    interface User {
+        id: number;
+        name: string;
+        email: string;
+        roles?: UserRole[];
+    }
+
+    interface UserFormDefaultValues {
+        name: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+        roles: string[];
+    }
+
+    const defaultValues: UserFormDefaultValues = {
         name: user.name,
         email: user.email,
         password: '',
         password_confirmation: '',
-        roles: user.roles?.map((r) => r.name) || [],
+        roles: user.roles?.map((r: UserRole) => r.name) || [],
     };
 
     return (

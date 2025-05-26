@@ -1,10 +1,19 @@
+import { type LucideProps } from 'lucide-react';
+import { type ComponentType } from 'react';
 import type { Config } from 'ziggy-js';
 
 // ===== CORE SHARED TYPES =====
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & SharedData;
 
 export interface SharedData {
-    auth: Auth;
+    auth: {
+        user: User;
+    };
+    name: string;
+    quote?: {
+        message: string;
+        author: string;
+    };
     ziggy: Config & { location: string };
     navigation: Navigation;
     sidebarOpen: boolean;
@@ -43,8 +52,7 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    roles?: { name: string }[];
-    [key: string]: unknown;
+    roles?: Array<{ name: string; [key: string]: any }>;
 }
 
 export interface Auth {
@@ -71,7 +79,7 @@ export interface BreadcrumbItem {
 export interface NavItem {
     title: string;
     href: string;
-    icon?: string;
+    icon?: ComponentType<LucideProps>;
     isActive?: boolean;
     children?: NavItem[];
 }

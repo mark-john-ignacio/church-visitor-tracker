@@ -8,12 +8,13 @@ import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-export type Column<T> = {
+export interface Column<T> {
     label: string;
-    key: Extract<keyof T, string | number>;
+    key: keyof T | string;
     sortable?: boolean;
-    render?: (row: T) => React.ReactNode;
-};
+    className?: string;
+    render?: (item: T) => React.ReactNode;
+}
 
 export type SortDirection = 'asc' | 'desc' | null;
 
@@ -130,7 +131,7 @@ export function CrudIndex<T extends { id: number }>(props: {
                         <TableRow>
                             {columns.map((c) => (
                                 <TableHead
-                                    key={c.key}
+                                    key={String(c.key)}
                                     className={c.sortable ? 'hover:bg-muted cursor-pointer' : ''}
                                     onClick={() => c.sortable && handleSort(String(c.key))}
                                 >
@@ -162,7 +163,9 @@ export function CrudIndex<T extends { id: number }>(props: {
                             rows.map((r) => (
                                 <TableRow key={r.id}>
                                     {columns.map((c) => (
-                                        <TableCell key={`${r.id}-${String(c.key)}`}>{c.render ? c.render(r) : (r[c.key] as any)}</TableCell>
+                                        <TableCell key={`${r.id}-${String(c.key)}`}>
+                                            {c.render ? c.render(r) : (r[c.key as keyof T] as any)}
+                                        </TableCell>
                                     ))}
                                     <TableCell className="text-right">
                                         <Button size="sm" className="mr-2" variant="outline" asChild>
