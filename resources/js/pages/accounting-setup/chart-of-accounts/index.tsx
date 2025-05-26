@@ -8,6 +8,11 @@ import { chartOfAccountsColumns } from './components/columns';
 
 interface ChartOfAccountsPageProps extends PageProps {
     accounts: LaravelPaginator<ChartOfAccount>;
+    filters?: {
+        search?: string;
+        sort?: string;
+        order?: string;
+    };
 }
 
 const BREADCRUMBS: BreadcrumbItem[] = [
@@ -16,10 +21,18 @@ const BREADCRUMBS: BreadcrumbItem[] = [
     { title: 'Chart of Accounts', href: route('accounting-setup.chart-of-accounts.index') },
 ];
 
-export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPageProps) {
+export default function ChartOfAccountsIndex({ accounts, filters }: ChartOfAccountsPageProps) {
     // Custom delete confirmation message function
     const getDeleteConfirmationMessage = (account: ChartOfAccount) => {
         return `Are you sure you want to delete the account "${account.account_code} - ${account.account_name}"? This action cannot be undone and may affect related transactions.`;
+    };
+
+    // Transform Laravel pagination to our table format
+    const paginationInfo = {
+        pageIndex: accounts.current_page - 1, // Convert to 0-based index
+        pageSize: accounts.per_page,
+        pageCount: accounts.last_page,
+        total: accounts.total,
     };
 
     return (
@@ -48,6 +61,8 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                             searchPlaceholder="Filter accounts..."
                             tableKey="chart-of-accounts"
                             getDeleteConfirmationMessage={getDeleteConfirmationMessage}
+                            serverSide={true}
+                            pagination={paginationInfo}
                         />
                     </CardContent>
                 </Card>

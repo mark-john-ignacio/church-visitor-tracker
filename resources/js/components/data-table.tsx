@@ -8,7 +8,6 @@ import {
     flexRender,
     getCoreRowModel,
     getFilteredRowModel,
-    getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
@@ -19,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { router } from '@inertiajs/react';
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -26,8 +26,16 @@ interface DataTableProps<TData, TValue> {
     searchPlaceholder?: string;
     searchColumn?: string;
     tableKey?: string;
-    onDelete?: (item: TData) => void; // Optional delete handler
-    getDeleteConfirmationMessage?: (item: TData) => string; // Custom delete message
+    onDelete?: (item: TData) => void;
+    getDeleteConfirmationMessage?: (item: TData) => string;
+    // Server-side pagination props
+    pagination?: {
+        pageIndex: number;
+        pageSize: number;
+        pageCount: number;
+        total: number;
+    };
+    serverSide?: boolean;
 }
 
 // Context for delete confirmation
@@ -51,6 +59,8 @@ export function DataTable<TData, TValue>({
     tableKey = 'default-table',
     onDelete,
     getDeleteConfirmationMessage,
+    pagination,
+    serverSide = false,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -91,14 +101,32 @@ export function DataTable<TData, TValue>({
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
+        getFilteredRowModel: serverSide ? undefined : getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
+        // Server-side pagination
+        ...(serverSide && pagination
+            ? {
+                  pageCount: pagination.pageCount,
+                  manualPagination: true,
+                  manualSorting: true,
+                  manualFiltering: true,
+              }
+            : {
+                  getPaginationRowModel: getPaginationRowModel(),
+              }),
         state: {
             sorting,
             columnFilters,
             columnVisibility,
+            ...(serverSide && pagination
+                ? {
+                      pagination: {
+                          pageIndex: pagination.pageIndex,
+                          pageSize: pagination.pageSize,
+                      },
+                  }
+                : {}),
         },
     });
 
@@ -109,6 +137,82 @@ export function DataTable<TData, TValue>({
             localStorage.removeItem(`table-visibility-${tableKey}`);
         }
     }, [tableKey]);
+
+    // Handle server-side pagination
+    const handlePagination = React.useCallback(
+        (pageIndex: number) => {
+            if (serverSide) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', String(pageIndex + 1));
+                router.get(
+                    url.toString(),
+                    {},
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                    },
+                );
+            }
+        },
+        [serverSide],
+    );
+
+    // Handle server-side search
+    const handleSearch = React.useCallback(
+        (value: string) => {
+            if (serverSide) {
+                const url = new URL(window.location.href);
+                if (value) {
+                    url.searchParams.set('search', value);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                url.searchParams.set('page', '1'); // Reset to first page
+                router.get(
+                    url.toString(),
+                    {},
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                    },
+                );
+            }
+        },
+        [serverSide],
+    );
+
+    // Handle server-side sorting
+    const handleSorting = React.useCallback(
+        (newSorting: SortingState) => {
+            setSorting(newSorting);
+            if (serverSide && newSorting.length > 0) {
+                const sort = newSorting[0];
+                const url = new URL(window.location.href);
+                url.searchParams.set('sort', sort.id);
+                url.searchParams.set('order', sort.desc ? 'desc' : 'asc');
+                url.searchParams.set('page', '1');
+                router.get(
+                    url.toString(),
+                    {},
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                    },
+                );
+            }
+        },
+        [serverSide],
+    );
+
+    // Override table sorting if server-side
+    React.useEffect(() => {
+        if (serverSide) {
+            table.setOptions((prev) => ({
+                ...prev,
+                onSortingChange: handleSorting,
+            }));
+        }
+    }, [table, handleSorting, serverSide]);
 
     // Delete confirmation function
     const confirmDelete = React.useCallback(
@@ -160,8 +264,17 @@ export function DataTable<TData, TValue>({
                     {searchColumn && (
                         <Input
                             placeholder={searchPlaceholder}
-                            value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ''}
-                            onChange={(event) => table.getColumn(searchColumn)?.setFilterValue(event.target.value)}
+                            defaultValue={new URLSearchParams(window.location.search).get('search') || ''}
+                            onChange={(event) => {
+                                if (serverSide) {
+                                    const timeoutId = setTimeout(() => {
+                                        handleSearch(event.target.value);
+                                    }, 500); // Debounce search
+                                    return () => clearTimeout(timeoutId);
+                                } else {
+                                    table.getColumn(searchColumn)?.setFilterValue(event.target.value);
+                                }
+                            }}
                             className="max-w-sm"
                         />
                     )}
@@ -232,12 +345,52 @@ export function DataTable<TData, TValue>({
                     </Table>
                 </div>
 
-                <div className="flex items-center justify-end space-x-2 py-4">
+                {/* Pagination */}
+                <div className="flex items-center justify-between space-x-2 py-4">
+                    <div className="text-muted-foreground text-sm">
+                        {serverSide && pagination ? (
+                            <>
+                                Showing {pagination.pageIndex * pagination.pageSize + 1} to{' '}
+                                {Math.min((pagination.pageIndex + 1) * pagination.pageSize, pagination.total)} of {pagination.total} results
+                            </>
+                        ) : (
+                            <>
+                                Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                                {Math.min(
+                                    (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                                    table.getFilteredRowModel().rows.length,
+                                )}{' '}
+                                of {table.getFilteredRowModel().rows.length} results
+                            </>
+                        )}
+                    </div>
                     <div className="space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                if (serverSide) {
+                                    handlePagination(table.getState().pagination.pageIndex - 1);
+                                } else {
+                                    table.previousPage();
+                                }
+                            }}
+                            disabled={!table.getCanPreviousPage()}
+                        >
                             Previous
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                if (serverSide) {
+                                    handlePagination(table.getState().pagination.pageIndex + 1);
+                                } else {
+                                    table.nextPage();
+                                }
+                            }}
+                            disabled={!table.getCanNextPage()}
+                        >
                             Next
                         </Button>
                     </div>
