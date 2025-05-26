@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\AccountingSetup\Database\Factories\ChartOfAccountFactory;
 
 class ChartOfAccount extends Model
 {
@@ -130,5 +131,10 @@ class ChartOfAccount extends Model
             ->when($excludeId, fn($query) => $query->where('id', '!=', $excludeId))
             ->orderByCode()
             ->get();
+    }
+
+    protected static function newFactory(): ChartOfAccountFactory
+    {
+        return ChartOfAccountFactory::new();
     }
 }
