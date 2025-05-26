@@ -18,22 +18,22 @@ export interface Column<T> {
 
 export type SortDirection = 'asc' | 'desc' | null;
 
-interface CrudIndexProps<T extends { id: number }> {
-    rows: T[];
+interface DataTableProps<T extends { id: number }> {
+    data: T[];
     columns: Column<T>[];
     resource: string;
     routePrefix?: string;
-    renderMobile?: (rows: T[]) => ReactNode;
+    renderMobile?: (data: T[]) => ReactNode;
     onDelete?: (id: number) => void;
     paginator?: LaravelPaginator<T>;
     searchable?: boolean;
     onSearch?: (searchTerm: string) => void;
     onSort?: (column: string, direction: SortDirection) => void;
-    canDelete?: (row: T) => boolean;
+    canDelete?: (item: T) => boolean;
 }
 
 export function DataTable<T extends { id: number }>({
-    rows,
+    data,
     columns,
     resource,
     routePrefix = 'admin',
@@ -44,27 +44,27 @@ export function DataTable<T extends { id: number }>({
     onSearch,
     onSort,
     canDelete = () => true,
-}: CrudIndexProps<T>) {
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [toDelete, setToDelete] = useState<T | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortColumn, setSortColumn] = useState<string | null>(null);
-    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+}: DataTableProps<T>) {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<T | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentSortColumn, setCurrentSortColumn] = useState<string | null>(null);
+    const [currentSortDirection, setCurrentSortDirection] = useState<SortDirection>(null);
 
     const fullRoutePrefix = routePrefix ? `${routePrefix}.` : '';
 
-    const handleDelete = useCallback(
+    const handleDeleteItem = useCallback(
         (id: number) => {
             if (onDelete) {
                 onDelete(id);
-                setConfirmOpen(false);
+                setIsDeleteDialogOpen(false);
                 return;
             }
 
             router.delete(route(`${fullRoutePrefix}${resource}.destroy`, id), {
                 onSuccess: () => {
                     toast.success('Record deleted successfully');
-                    setConfirmOpen(false);
+                    setIsDeleteDialogOpen(false);
                 },
                 onError: () => {
                     toast.error('Failed to delete record');
@@ -74,63 +74,67 @@ export function DataTable<T extends { id: number }>({
         [resource, onDelete, fullRoutePrefix],
     );
 
-    const handleSearch = useCallback(() => {
-        if (onSearch && searchTerm.trim()) {
-            onSearch(searchTerm.trim());
+    const handleSearchSubmit = useCallback(() => {
+        if (onSearch && searchQuery.trim()) {
+            onSearch(searchQuery.trim());
         }
-    }, [searchTerm, onSearch]);
+    }, [searchQuery, onSearch]);
 
-    const handleSort = useCallback(
+    const handleColumnSort = useCallback(
         (column: string) => {
             if (!onSort) return;
 
             let newDirection: SortDirection = 'asc';
 
-            if (sortColumn === column) {
-                if (sortDirection === 'asc') {
+            if (currentSortColumn === column) {
+                if (currentSortDirection === 'asc') {
                     newDirection = 'desc';
-                } else if (sortDirection === 'desc') {
+                } else if (currentSortDirection === 'desc') {
                     newDirection = null;
                 }
             }
 
-            setSortColumn(newDirection ? column : null);
-            setSortDirection(newDirection);
+            setCurrentSortColumn(newDirection ? column : null);
+            setCurrentSortDirection(newDirection);
             onSort(column, newDirection);
         },
-        [sortColumn, sortDirection, onSort],
+        [currentSortColumn, currentSortDirection, onSort],
     );
 
     const openDeleteDialog = useCallback((item: T) => {
-        setToDelete(item);
-        setConfirmOpen(true);
+        setItemToDelete(item);
+        setIsDeleteDialogOpen(true);
     }, []);
 
     const closeDeleteDialog = useCallback(() => {
-        setConfirmOpen(false);
-        setToDelete(null);
+        setIsDeleteDialogOpen(false);
+        setItemToDelete(null);
     }, []);
 
-    const confirmDelete = useCallback(() => {
-        if (toDelete) {
-            handleDelete(toDelete.id);
+    const confirmDeleteAction = useCallback(() => {
+        if (itemToDelete) {
+            handleDeleteItem(itemToDelete.id);
         }
-    }, [toDelete, handleDelete]);
+    }, [itemToDelete, handleDeleteItem]);
 
-    const renderTableCell = useCallback((item: T, column: Column<T>) => {
+    const renderCellContent = useCallback((item: T, column: Column<T>) => {
         if (column.render) {
             return column.render(item);
         }
         return item[column.key as keyof T] as ReactNode;
     }, []);
 
-    const renderSortIcon = useCallback(
+    const renderSortIndicator = useCallback(
         (columnKey: string) => {
-            if (sortColumn !== columnKey) return null;
+            if (currentSortColumn !== columnKey) return null;
 
-            return <span className="ml-1">{sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>;
+            return (
+                <span className="ml-1">
+                    {currentSortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </span>
+            );
         },
-        [sortColumn, sortDirection],
+        [currentSortColumn, currentSortDirection],
     );
 
     return (
@@ -142,13 +146,13 @@ export function DataTable<T extends { id: number }>({
                         <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                         <Input
                             placeholder="Search..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
                             className="pl-9"
                         />
                     </div>
-                    <Button variant="secondary" onClick={handleSearch}>
+                    <Button variant="secondary" onClick={handleSearchSubmit}>
                         Search
                     </Button>
                 </div>
@@ -163,11 +167,11 @@ export function DataTable<T extends { id: number }>({
                                 <TableHead
                                     key={String(column.key)}
                                     className={`${column.className || ''} ${column.sortable ? 'hover:bg-muted cursor-pointer' : ''}`}
-                                    onClick={() => column.sortable && handleSort(String(column.key))}
+                                    onClick={() => column.sortable && handleColumnSort(String(column.key))}
                                 >
                                     <div className="flex items-center">
                                         {column.label}
-                                        {column.sortable && renderSortIcon(String(column.key))}
+                                        {column.sortable && renderSortIndicator(String(column.key))}
                                     </div>
                                 </TableHead>
                             ))}
@@ -175,18 +179,18 @@ export function DataTable<T extends { id: number }>({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {rows.length === 0 ? (
+                        {data.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={columns.length + 1} className="text-muted-foreground py-8 text-center">
                                     No records found.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            rows.map((item) => (
+                            data.map((item) => (
                                 <TableRow key={item.id}>
                                     {columns.map((column) => (
                                         <TableCell key={`${item.id}-${String(column.key)}`} className={column.className}>
-                                            {renderTableCell(item, column)}
+                                            {renderCellContent(item, column)}
                                         </TableCell>
                                     ))}
                                     <TableCell className="text-right">
@@ -210,10 +214,10 @@ export function DataTable<T extends { id: number }>({
 
             {/* Mobile View */}
             <div className="sm:hidden">
-                {rows.length === 0 ? (
+                {data.length === 0 ? (
                     <div className="text-muted-foreground py-8 text-center">No records found.</div>
                 ) : renderMobile ? (
-                    renderMobile(rows)
+                    renderMobile(data)
                 ) : (
                     <div className="text-muted-foreground text-center">Mobile view not implemented.</div>
                 )}
@@ -240,7 +244,7 @@ export function DataTable<T extends { id: number }>({
             )}
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={confirmOpen} onOpenChange={closeDeleteDialog}>
+            <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Confirm Deletion</DialogTitle>
@@ -250,7 +254,7 @@ export function DataTable<T extends { id: number }>({
                         <Button variant="outline" onClick={closeDeleteDialog}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={confirmDelete}>
+                        <Button variant="destructive" onClick={confirmDeleteAction}>
                             Delete
                         </Button>
                     </DialogFooter>
