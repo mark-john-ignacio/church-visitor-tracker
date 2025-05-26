@@ -8,6 +8,7 @@ import {
     flexRender,
     getCoreRowModel,
     getFilteredRowModel,
+    getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
@@ -36,6 +37,12 @@ interface DataTableProps<TData, TValue> {
         total: number;
     };
     serverSide?: boolean;
+    // Add filters prop to sync with server state
+    filters?: {
+        search?: string;
+        sort?: string;
+        order?: string;
+    };
 }
 
 // Context for delete confirmation
@@ -61,8 +68,21 @@ export function DataTable<TData, TValue>({
     getDeleteConfirmationMessage,
     pagination,
     serverSide = false,
+    filters,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([]);
+    // Initialize sorting state from server filters
+    const [sorting, setSorting] = React.useState<SortingState>(() => {
+        if (serverSide && filters?.sort) {
+            return [
+                {
+                    id: filters.sort,
+                    desc: filters.order === 'desc',
+                },
+            ];
+        }
+        return [];
+    });
+
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
     // Delete confirmation state
@@ -95,10 +115,43 @@ export function DataTable<TData, TValue>({
         }
     }, [columnVisibility, tableKey]);
 
+    // Handle server-side sorting
+    const handleSorting = React.useCallback(
+        (updater: any) => {
+            const newSorting = typeof updater === 'function' ? updater(sorting) : updater;
+            setSorting(newSorting);
+
+            if (serverSide) {
+                const url = new URL(window.location.href);
+
+                if (newSorting.length > 0) {
+                    const sort = newSorting[0];
+                    url.searchParams.set('sort', sort.id);
+                    url.searchParams.set('order', sort.desc ? 'desc' : 'asc');
+                } else {
+                    url.searchParams.delete('sort');
+                    url.searchParams.delete('order');
+                }
+
+                url.searchParams.set('page', '1'); // Reset to first page
+
+                router.get(
+                    url.toString(),
+                    {},
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                    },
+                );
+            }
+        },
+        [serverSide, sorting],
+    );
+
     const table = useReactTable({
         data,
         columns,
-        onSortingChange: setSorting,
+        onSortingChange: handleSorting,
         onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -157,7 +210,7 @@ export function DataTable<TData, TValue>({
         [serverSide],
     );
 
-    // Handle server-side search
+    // Handle server-side search with debouncing
     const handleSearch = React.useCallback(
         (value: string) => {
             if (serverSide) {
@@ -181,38 +234,24 @@ export function DataTable<TData, TValue>({
         [serverSide],
     );
 
-    // Handle server-side sorting
-    const handleSorting = React.useCallback(
-        (newSorting: SortingState) => {
-            setSorting(newSorting);
-            if (serverSide && newSorting.length > 0) {
-                const sort = newSorting[0];
-                const url = new URL(window.location.href);
-                url.searchParams.set('sort', sort.id);
-                url.searchParams.set('order', sort.desc ? 'desc' : 'asc');
-                url.searchParams.set('page', '1');
-                router.get(
-                    url.toString(),
-                    {},
-                    {
-                        preserveState: true,
-                        preserveScroll: true,
-                    },
-                );
+    // Debounced search ref
+    const searchTimeoutRef = React.useRef<NodeJS.Timeout>();
+
+    const handleSearchInput = React.useCallback(
+        (value: string) => {
+            if (serverSide) {
+                if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                }
+                searchTimeoutRef.current = setTimeout(() => {
+                    handleSearch(value);
+                }, 500);
+            } else {
+                table.getColumn(searchColumn)?.setFilterValue(value);
             }
         },
-        [serverSide],
+        [serverSide, handleSearch, table, searchColumn],
     );
-
-    // Override table sorting if server-side
-    React.useEffect(() => {
-        if (serverSide) {
-            table.setOptions((prev) => ({
-                ...prev,
-                onSortingChange: handleSorting,
-            }));
-        }
-    }, [table, handleSorting, serverSide]);
 
     // Delete confirmation function
     const confirmDelete = React.useCallback(
@@ -264,17 +303,8 @@ export function DataTable<TData, TValue>({
                     {searchColumn && (
                         <Input
                             placeholder={searchPlaceholder}
-                            defaultValue={new URLSearchParams(window.location.search).get('search') || ''}
-                            onChange={(event) => {
-                                if (serverSide) {
-                                    const timeoutId = setTimeout(() => {
-                                        handleSearch(event.target.value);
-                                    }, 500); // Debounce search
-                                    return () => clearTimeout(timeoutId);
-                                } else {
-                                    table.getColumn(searchColumn)?.setFilterValue(event.target.value);
-                                }
-                            }}
+                            defaultValue={filters?.search || ''}
+                            onChange={(event) => handleSearchInput(event.target.value)}
                             className="max-w-sm"
                         />
                     )}

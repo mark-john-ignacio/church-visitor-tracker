@@ -14,33 +14,26 @@ use Inertia\Response;
 
 class ChartOfAccountController extends Controller
 {
-    private const ALLOWED_SORT_COLUMNS = [
-        'account_code', 
-        'account_name', 
-        'account_type', 
-        'level',
-        'created_at', 
-        'is_active'
-    ];
     
     private const ITEMS_PER_PAGE = 15;
+
 
     public function index(Request $request): Response
     {
         $accounts = ChartOfAccount::query()
             ->search($request->search)
-            ->when($request->sort && in_array($request->sort, self::ALLOWED_SORT_COLUMNS), function ($query) use ($request) {
+            ->when($request->sort, function ($query) use ($request) {
                 $direction = in_array($request->order, ['asc', 'desc']) ? $request->order : 'asc';
                 return $query->orderBy($request->sort, $direction);
             }, function ($query) {
-                return $query->latest();
+                return $query->orderByCode();
             })
             ->paginate(self::ITEMS_PER_PAGE)
             ->withQueryString();
 
         return Inertia::render('accounting-setup/chart-of-accounts/index', [
             'accounts' => $accounts,
-            'filters' => $request->only(['search', 'sort', 'order']),
+            'filters' => $request->only(['search', 'sort', 'order']), 
         ]);
     }
 
