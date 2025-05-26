@@ -331,6 +331,16 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                 />
 
                 <div className="flex justify-end">
+                    {/* cancel */}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => router.get(route('accounting-setup.chart-of-accounts.index'))}
+                        disabled={processing || disabled}
+                        className="mr-2"
+                    >
+                        Cancel
+                    </Button>
                     <Button type="submit" disabled={processing || disabled}>
                         {method === 'post' ? 'Create' : 'Update'} Account
                     </Button>
