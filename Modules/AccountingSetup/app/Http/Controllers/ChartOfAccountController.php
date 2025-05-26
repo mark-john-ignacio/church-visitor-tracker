@@ -5,6 +5,7 @@ namespace Modules\AccountingSetup\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log; // Import Log facade
 use Inertia\Inertia;
 
 class ChartOfAccountController extends Controller
@@ -162,7 +163,9 @@ class ChartOfAccountController extends Controller
                 'string',
                 'max:50',
                 function ($attribute, $value, $fail) use ($companyId, $chartOfAccount) {
-                    $exists = ChartOfAccount::where('account_code', $value)
+                    // Fixed: Added company_id to the unique check query
+                    $exists = ChartOfAccount::where('company_id', $companyId) 
+                        ->where('account_code', $value)
                         ->where('id', '!=', $chartOfAccount->id)
                         ->exists();
                     
@@ -184,13 +187,48 @@ class ChartOfAccountController extends Controller
         if ($validated['level'] == 1) {
             $validated['header_account_id'] = null;
         } elseif (empty($validated['header_account_id']) && $validated['level'] > 1) {
-            return redirect()->back()->withErrors(['header_account_id' => 'Header account is required for sub-accounts.']);
+            // Added: withInput() to repopulate form
+            return redirect()->back()->withInput()->withErrors(['header_account_id' => 'Header account is required for sub-accounts.']);
         }
 
-        $chartOfAccount->update($validated);
+        Log::info('Attempting to update ChartOfAccount ID: ' . $chartOfAccount->id . ' for company ID: ' . $companyId);
+        Log::debug('Validated data for update:', $validated);
+        Log::debug('Original model attributes before update:', $chartOfAccount->getOriginal());
 
-        return redirect()->route('accounting-setup.chart-of-accounts.index')
-            ->with('success', 'Account updated successfully');
+        $chartOfAccount->fill($validated);
+        $dirtyAttributes = $chartOfAccount->getDirty();
+
+        if (empty($dirtyAttributes)) {
+            Log::info('No actual changes to apply for ChartOfAccount ID: ' . $chartOfAccount->id);
+            return redirect()->route('accounting-setup.chart-of-accounts.index')
+                ->with('success', 'Account details are already up to date.');
+        }
+
+        Log::debug('Dirty attributes before saving:', $dirtyAttributes);
+
+        try {
+            $isSuccess = $chartOfAccount->save();
+
+            if ($isSuccess) {
+                Log::info('ChartOfAccount ID: ' . $chartOfAccount->id . ' updated successfully in database.');
+                Log::debug('Model attributes after successful update:', $chartOfAccount->fresh()->toArray());
+                return redirect()->route('accounting-setup.chart-of-accounts.index')
+                    ->with('success', 'Account updated successfully');
+            } else {
+                Log::error('ChartOfAccount update failed for ID: ' . $chartOfAccount->id . '. The save() method returned false. This might be due to a model event (saving/updating) returning false.');
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Failed to update account. The save operation returned false. Please check logs.');
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception during ChartOfAccount update for ID: ' . $chartOfAccount->id . ': ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'An unexpected error occurred while updating the account. Please check logs.');
+        }
     }
     
     /**

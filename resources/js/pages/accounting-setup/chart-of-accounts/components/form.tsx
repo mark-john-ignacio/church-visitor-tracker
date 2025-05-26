@@ -4,7 +4,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { HeaderAccountOption } from '@/types'; // Import the new type
+import { ChartOfAccount, HeaderAccountOption } from '@/types'; // Import the new type
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm as useInertiaForm } from '@inertiajs/react';
 import { useEffect } from 'react';
@@ -29,11 +29,11 @@ const formSchema = z
         account_name: z.string().min(1, 'Account name is required'),
         account_type: z.string().min(1, 'Account type is required'),
         account_nature: z.enum(['General', 'Detail'], { required_error: 'Account nature is required' }),
-        is_contra_account: z.boolean().default(false),
+        is_contra_account: z.boolean(),
         level: z.number().min(1).max(5, 'Level must be between 1 and 5'),
         header_account_id: z.number().nullable().optional(),
         description: z.string().nullable().optional(),
-        is_active: z.boolean().default(true),
+        is_active: z.boolean(),
     })
     .refine((data) => !(data.level > 1 && !data.header_account_id), {
         message: 'Header account is required for levels 2-5',
@@ -61,7 +61,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
         account_nature: defaultValues.account_nature || 'Detail',
         is_contra_account: defaultValues.is_contra_account ?? false,
         level: defaultValues.level || 1,
-        header_account_id: defaultValues.header_account_id || null,
+        header_account_id: defaultValues.header_account_id ?? null,
         description: defaultValues.description || '',
         is_active: defaultValues.is_active ?? true,
     });
@@ -69,16 +69,16 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            // Ensure all fields are initialized
+            // Ensure all fields are initialized with correct types
             account_code: inertiaData.account_code,
             account_name: inertiaData.account_name,
             account_type: inertiaData.account_type,
             account_nature: inertiaData.account_nature as 'General' | 'Detail',
-            is_contra_account: inertiaData.is_contra_account,
+            is_contra_account: Boolean(inertiaData.is_contra_account), // Cast to boolean
             level: inertiaData.level,
             header_account_id: inertiaData.header_account_id,
             description: inertiaData.description,
-            is_active: inertiaData.is_active,
+            is_active: Boolean(inertiaData.is_active), // Cast to boolean
         },
     });
 
@@ -103,7 +103,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
             account_nature: defaultValues.account_nature || 'Detail',
             is_contra_account: defaultValues.is_contra_account ?? false,
             level: defaultValues.level || 1,
-            header_account_id: defaultValues.header_account_id || null,
+            header_account_id: defaultValues.header_account_id ?? null,
             description: defaultValues.description || '',
             is_active: defaultValues.is_active ?? true,
         };
@@ -112,16 +112,60 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
     }, [defaultValues]);
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        const dataToSubmit = { ...values };
-        if (dataToSubmit.level === 1) {
-            dataToSubmit.header_account_id = null;
-        }
-        setData(dataToSubmit as any); // Cast to any to match Inertia's useForm data structure
+        console.log('[FORM_DEBUG] RHF onSubmit raw values:', JSON.stringify(values));
+
+        const transformedValues = {
+            ...values,
+            header_account_id: values.header_account_id === null || values.header_account_id === undefined ? null : Number(values.header_account_id),
+            level: Number(values.level),
+            description: values.description || '',
+            // Ensure boolean values are actual booleans if they were somehow strings from RHF
+            is_active: typeof values.is_active === 'string' ? values.is_active === 'true' : Boolean(values.is_active),
+            is_contra_account: typeof values.is_contra_account === 'string' ? values.is_contra_account === 'true' : Boolean(values.is_contra_account),
+        };
+        console.log('[FORM_DEBUG] Transformed values (to be set in Inertia form):', JSON.stringify(transformedValues));
+
+        // Update Inertia's form state with the transformed values from react-hook-form
+        setData(transformedValues);
 
         if (method === 'post') {
-            post(url, { onError: (pageErrors) => form.setError('root', { type: 'manual', message: 'Server validation failed.' }) });
+            console.log('[FORM_DEBUG] Preparing to POST (create new COA)');
+            post(url, {
+                preserveScroll: true,
+                onBefore: (visit) => {
+                    console.log('[FORM_DEBUG] Inertia `post` onBefore - actual data being sent:', JSON.stringify(visit.data));
+                },
+                onSuccess: (page) => {
+                    console.log('[FORM_DEBUG] Inertia `post` onSuccess:', page);
+                    // toast success
+                },
+                onError: (errorBag) => {
+                    console.error('[FORM_DEBUG] Inertia `post` onError:', errorBag);
+                    // toast error
+                },
+                onFinish: () => {
+                    console.log('[FORM_DEBUG] Inertia `post` onFinish');
+                },
+            });
         } else {
-            put(url, { onError: (pageErrors) => form.setError('root', { type: 'manual', message: 'Server validation failed.' }) });
+            console.log(`[FORM_DEBUG] Preparing to PUT for COA ID: ${defaultValues.id}`);
+            put(url, {
+                preserveScroll: true,
+                onBefore: (visit) => {
+                    console.log('[FORM_DEBUG] Inertia `put` onBefore - actual data being sent:', JSON.stringify(visit.data));
+                },
+                onSuccess: (page) => {
+                    console.log('[FORM_DEBUG] Inertia `put` onSuccess:', page);
+                    // toast success
+                },
+                onError: (errorBag) => {
+                    console.error('[FORM_DEBUG] Inertia `put` onError:', errorBag);
+                    // toast error
+                },
+                onFinish: () => {
+                    console.log('[FORM_DEBUG] Inertia `put` onFinish');
+                },
+            });
         }
     }
 
