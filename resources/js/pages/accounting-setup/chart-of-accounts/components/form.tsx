@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ChartOfAccount, HeaderAccountOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm as useInertiaForm } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -17,6 +17,7 @@ interface ChartOfAccountFormProps {
     method: 'post' | 'put';
     disabled?: boolean;
     headerAccounts: HeaderAccountOption[];
+    errors?: Record<string, string>;
 }
 
 const formSchema = z
@@ -52,17 +53,16 @@ const normalizeFormData = (values: Partial<ChartOfAccount>) => ({
     account_name: values.account_name || '',
     account_type: values.account_type || '',
     account_nature: values.account_nature || ('Detail' as const),
-    is_contra_account: values.is_contra_account ?? false,
-    level: values.level || 1,
-    header_account_id: values.header_account_id ?? null,
+    is_contra_account: Boolean(values.is_contra_account),
+    level: Number(values.level) || 1,
+    header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
     description: values.description || '',
-    is_active: values.is_active ?? true,
+    is_active: Boolean(values.is_active ?? true),
 });
 
-export function ChartOfAccountForm({ defaultValues, url, method, disabled = false, headerAccounts }: ChartOfAccountFormProps) {
+export function ChartOfAccountForm({ defaultValues, url, method, disabled = false, headerAccounts, errors = {} }: ChartOfAccountFormProps) {
     const normalizedDefaults = normalizeFormData(defaultValues);
-
-    const { setData, post, put, processing, errors: inertiaErrors } = useInertiaForm(normalizedDefaults);
+    const [processing, setProcessing] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -82,25 +82,45 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
     useEffect(() => {
         const newDefaults = normalizeFormData(defaultValues);
         form.reset(newDefaults);
-        setData(newDefaults);
-    }, [defaultValues, form, setData]);
+    }, [defaultValues, form]);
 
     const onSubmit = (values: z.infer<typeof formSchema>) => {
         const submitData = {
-            ...values,
-            header_account_id: values.header_account_id || null,
+            account_code: values.account_code,
+            account_name: values.account_name,
+            account_type: values.account_type,
+            account_nature: values.account_nature,
+            is_contra_account: Boolean(values.is_contra_account),
+            level: Number(values.level),
+            header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
             description: values.description || '',
+            is_active: Boolean(values.is_active),
         };
 
-        setData(submitData);
+        console.log('Final submit data:', submitData);
+
+        setProcessing(true);
 
         const submitOptions = {
             preserveScroll: true,
-            onSuccess: () => console.log('Success'),
-            onError: (errors: any) => console.error('Error:', errors),
+            onSuccess: () => {
+                console.log('Success');
+                setProcessing(false);
+            },
+            onError: (errors: any) => {
+                console.error('Error:', errors);
+                setProcessing(false);
+            },
+            onFinish: () => {
+                setProcessing(false);
+            },
         };
 
-        method === 'post' ? post(url, submitOptions) : put(url, submitOptions);
+        if (method === 'post') {
+            router.post(url, submitData, submitOptions);
+        } else {
+            router.put(url, submitData, submitOptions);
+        }
     };
 
     const headerAccountOptions = headerAccounts.map((acc) => ({
@@ -123,7 +143,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     <Input placeholder="e.g., 10100" {...field} disabled={disabled} />
                                 </FormControl>
                                 <FormMessage />
-                                {inertiaErrors.account_code && <FormMessage>{inertiaErrors.account_code}</FormMessage>}
+                                {errors.account_code && <FormMessage>{errors.account_code}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -137,7 +157,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     <Input placeholder="e.g., Cash in Bank" {...field} disabled={disabled} />
                                 </FormControl>
                                 <FormMessage />
-                                {inertiaErrors.account_name && <FormMessage>{inertiaErrors.account_name}</FormMessage>}
+                                {errors.account_name && <FormMessage>{errors.account_name}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -166,7 +186,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
-                                {inertiaErrors.account_type && <FormMessage>{inertiaErrors.account_type}</FormMessage>}
+                                {errors.account_type && <FormMessage>{errors.account_type}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -191,7 +211,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
-                                {inertiaErrors.account_nature && <FormMessage>{inertiaErrors.account_nature}</FormMessage>}
+                                {errors.account_nature && <FormMessage>{errors.account_nature}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -224,7 +244,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
-                                {inertiaErrors.level && <FormMessage>{inertiaErrors.level}</FormMessage>}
+                                {errors.level && <FormMessage>{errors.level}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -257,7 +277,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                 </Select>
                                 <FormDescription>Required if Level is 2-5. Should be empty for Level 1.</FormDescription>
                                 <FormMessage />
-                                {inertiaErrors.header_account_id && <FormMessage>{inertiaErrors.header_account_id}</FormMessage>}
+                                {errors.header_account_id && <FormMessage>{errors.header_account_id}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -305,7 +325,7 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                 />
                             </FormControl>
                             <FormMessage />
-                            {inertiaErrors.description && <FormMessage>{inertiaErrors.description}</FormMessage>}
+                            {errors.description && <FormMessage>{errors.description}</FormMessage>}
                         </FormItem>
                     )}
                 />
