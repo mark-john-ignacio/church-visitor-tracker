@@ -1,12 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, ChartOfAccountEditPageProps } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { ChartOfAccountForm } from './components/form';
 
 interface EditChartOfAccountProps extends ChartOfAccountEditPageProps {}
 
 export default function EditChartOfAccount({ account, headerAccounts }: EditChartOfAccountProps) {
+    const { errors } = usePage().props;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Masterfiles', href: '#' },
         { title: 'Accounting Setup', href: '#' },
@@ -40,7 +41,8 @@ export default function EditChartOfAccount({ account, headerAccounts }: EditChar
                             defaultValues={defaultValues}
                             url={route('accounting-setup.chart-of-accounts.update', account.id)}
                             method="put"
-                            headerAccounts={headerAccounts} // Pass header accounts
+                            headerAccounts={headerAccounts}
+                            errors={errors}
                         />
                     </CardContent>
                 </Card>
