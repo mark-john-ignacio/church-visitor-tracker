@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { BreadcrumbItem, ChartOfAccountCreatePageProps } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
 import { ChartOfAccountForm } from './components/form';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -12,11 +12,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function CreateChartOfAccount({ headerAccounts }: ChartOfAccountCreatePageProps) {
+    const { errors } = usePage().props;
     const defaultValues = {
         account_code: '',
         account_name: '',
         account_type: 'Asset',
-        account_nature: 'Detail',
+        account_nature: 'General' as const,
         is_contra_account: false,
         level: 1,
         header_account_id: null,
@@ -39,6 +40,7 @@ export default function CreateChartOfAccount({ headerAccounts }: ChartOfAccountC
                             url={route('accounting-setup.chart-of-accounts.store')}
                             method="post"
                             headerAccounts={headerAccounts}
+                            errors={errors}
                         />
                     </CardContent>
                 </Card>
