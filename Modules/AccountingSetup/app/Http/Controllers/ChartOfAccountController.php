@@ -4,228 +4,202 @@ namespace Modules\AccountingSetup\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChartOfAccount;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ChartOfAccountController extends Controller
 {
-    private const ALLOWED_SORT_COLUMNS = ['account_code', 'account_name', 'account_type', 'created_at', 'is_active'];
+    private const ALLOWED_SORT_COLUMNS = [
+        'account_code', 
+        'account_name', 
+        'account_type', 
+        'level',
+        'created_at', 
+        'is_active'
+    ];
+    
     private const ITEMS_PER_PAGE = 15;
-    private const MAX_ACCOUNT_LEVEL = 5;
 
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
-        $query = ChartOfAccount::query()->with('headerAccount');
-        
-        $this->applySearch($query, $request->search);
-        $this->applySorting($query, $request->sort, $request->order);
-        
-        $accounts = $query->paginate(self::ITEMS_PER_PAGE)->withQueryString();
-        
+        $accounts = ChartOfAccount::query()
+            ->search($request->search)
+            ->when($request->sort && in_array($request->sort, self::ALLOWED_SORT_COLUMNS), function ($query) use ($request) {
+                $direction = in_array($request->order, ['asc', 'desc']) ? $request->order : 'asc';
+                return $query->orderBy($request->sort, $direction);
+            }, function ($query) {
+                return $query->latest();
+            })
+            ->paginate(self::ITEMS_PER_PAGE)
+            ->withQueryString();
+
         return Inertia::render('accounting-setup/chart-of-accounts/index', [
             'accounts' => $accounts,
+            'filters' => $request->only(['search', 'sort', 'order']),
         ]);
     }
-    
-    public function create()
+
+    public function create(): Response
     {
-        $companyId = tenant()->id;
-        $headerAccounts = $this->getEligibleHeaderAccounts($companyId);
-        
+        $headerAccounts = ChartOfAccount::getEligibleHeaderAccounts(tenant()->id);
+
         return Inertia::render('accounting-setup/chart-of-accounts/create', [
             'headerAccounts' => $headerAccounts,
         ]);
     }
-    
-    public function store(Request $request)
-    {
-        $companyId = tenant()->id;
-        $validated = $this->validateAccountData($request, $companyId);
-        
-        $this->validateHeaderAccountLogic($validated);
-        
-        ChartOfAccount::create(array_merge($validated, ['company_id' => $companyId]));
 
-        return redirect()->route('accounting-setup.chart-of-accounts.index')
-            ->with('success', 'Account created successfully');
-    }
-    
-    public function edit(ChartOfAccount $chartOfAccount) 
+    public function store(Request $request): RedirectResponse
     {
-        $this->ensureAccountBelongsToCompany($chartOfAccount);
-        
-        $companyId = tenant()->id;
-        $headerAccounts = $this->getEligibleHeaderAccounts($companyId, $chartOfAccount->id);
+        $validated = $this->validateAccountData($request);
+        $this->processHeaderAccountLogic($validated);
+
+        try {
+            DB::transaction(function () use ($validated) {
+                ChartOfAccount::create(array_merge($validated, [
+                    'company_id' => tenant()->id
+                ]));
+            });
+
+            return redirect()
+                ->route('accounting-setup.chart-of-accounts.index')
+                ->with('success', 'Account created successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create chart of account', [
+                'error' => $e->getMessage(),
+                'data' => $validated
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create account. Please try again.');
+        }
+    }
+
+    public function edit(ChartOfAccount $chartOfAccount): Response
+    {
+        $this->authorizeAccountAccess($chartOfAccount);
+
+        $headerAccounts = ChartOfAccount::getEligibleHeaderAccounts(
+            tenant()->id, 
+            $chartOfAccount->id
+        );
 
         return Inertia::render('accounting-setup/chart-of-accounts/edit', [
-            'account' => $chartOfAccount->load('headerAccount'), 
+            'account' => $chartOfAccount,
             'headerAccounts' => $headerAccounts,
         ]);
     }
-    
-    public function update(Request $request, ChartOfAccount $chartOfAccount)
+
+    public function update(Request $request, ChartOfAccount $chartOfAccount): RedirectResponse
     {
-        $this->ensureAccountBelongsToCompany($chartOfAccount);
-        
+        $this->authorizeAccountAccess($chartOfAccount);
+
+        $validated = $this->validateAccountData($request, $chartOfAccount);
+        $this->processHeaderAccountLogic($validated);
+
+        try {
+            DB::transaction(function () use ($chartOfAccount, $validated) {
+                $chartOfAccount->fill($validated);
+
+                if (!$chartOfAccount->isDirty()) {
+                    return redirect()
+                        ->route('accounting-setup.chart-of-accounts.index')
+                        ->with('info', 'No changes were made to the account.');
+                }
+
+                $chartOfAccount->save();
+            });
+
+            return redirect()
+                ->route('accounting-setup.chart-of-accounts.index')
+                ->with('success', 'Account updated successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update chart of account', [
+                'id' => $chartOfAccount->id,
+                'error' => $e->getMessage(),
+                'data' => $validated
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update account. Please try again.');
+        }
+    }
+
+    public function destroy(ChartOfAccount $chartOfAccount): RedirectResponse
+    {
+        $this->authorizeAccountAccess($chartOfAccount);
+
+        if (!$chartOfAccount->canBeDeleted()) {
+            return back()->with('error', 'Cannot delete account with sub-accounts or transactions.');
+        }
+
+        try {
+            DB::transaction(function () use ($chartOfAccount) {
+                $chartOfAccount->delete();
+            });
+
+            return redirect()
+                ->route('accounting-setup.chart-of-accounts.index')
+                ->with('success', 'Account deleted successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to delete chart of account', [
+                'id' => $chartOfAccount->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to delete account. Please try again.');
+        }
+    }
+
+    private function validateAccountData(Request $request, ?ChartOfAccount $account = null): array
+    {
         $companyId = tenant()->id;
-        $validated = $this->validateAccountData($request, $companyId, $chartOfAccount);
-        
-        $this->validateHeaderAccountLogic($validated);
-        Log::info('Updating ChartOfAccount', [
-            'id' => $chartOfAccount->id,
-            'company_id' => $companyId,
-            'validated_data' => $validated
-        ]);
-        
-        return $this->performUpdate($chartOfAccount, $validated);
-    }
-    
-    public function destroy(ChartOfAccount $chartOfAccount)
-    {
-        $this->ensureAccountBelongsToCompany($chartOfAccount);
-        
-        $chartOfAccount->delete();
-        
-        return redirect()->route('accounting-setup.chart-of-accounts.index')
-            ->with('success', 'Account deleted successfully');
-    }
 
-    private function applySearch($query, $search)
-    {
-        if (empty($search)) {
-            return;
-        }
-
-        $query->where(function ($q) use ($search) {
-            $q->where('account_code', 'like', "%{$search}%")
-              ->orWhere('account_name', 'like', "%{$search}%")
-              ->orWhere('account_type', 'like', "%{$search}%")
-              ->orWhere('description', 'like', "%{$search}%");
-        });
-    }
-
-    private function applySorting($query, $sort, $order)
-    {
-        if (empty($sort)) {
-            $query->latest();
-            return;
-        }
-
-        $sortDirection = in_array($order, ['asc', 'desc']) ? $order : 'asc';
-        
-        if (in_array($sort, self::ALLOWED_SORT_COLUMNS)) {
-            $query->orderBy($sort, $sortDirection);
-        } else {
-            $query->latest();
-        }
-    }
-
-    private function validateAccountData(Request $request, $companyId, $chartOfAccount = null)
-    {
         return $request->validate([
             'account_code' => [
                 'required',
                 'string',
                 'max:50',
-                function ($attribute, $value, $fail) use ($companyId, $chartOfAccount) {
-                    $query = ChartOfAccount::where('company_id', $companyId)
-                        ->where('account_code', $value);
-                    
-                    if ($chartOfAccount) {
-                        $query->where('id', '!=', $chartOfAccount->id);
-                    }
-                    
-                    if ($query->exists()) {
-                        $fail('The account code has already been taken for this company.');
-                    }
-                }
+                Rule::unique('chart_of_accounts')
+                    ->where('company_id', $companyId)
+                    ->ignore($account?->id)
             ],
             'account_name' => 'required|string|max:255',
             'account_type' => 'required|string|max:50',
-            'account_nature' => 'required|in:General,Detail',
+            'account_nature' => ['required', Rule::in([ChartOfAccount::NATURE_GENERAL, ChartOfAccount::NATURE_DETAIL])],
             'is_contra_account' => 'required|boolean',
-            'level' => 'required|integer|min:1|max:' . self::MAX_ACCOUNT_LEVEL,
-            'header_account_id' => 'nullable|exists:chart_of_accounts,id,company_id,' . $companyId,
-            'description' => 'nullable|string',
+            'level' => 'required|integer|min:' . ChartOfAccount::MIN_LEVEL . '|max:' . ChartOfAccount::MAX_LEVEL,
+            'header_account_id' => [
+                'nullable',
+                Rule::exists('chart_of_accounts', 'id')->where('company_id', $companyId)
+            ],
+            'description' => 'nullable|string|max:1000',
             'is_active' => 'required|boolean',
         ]);
     }
 
-    private function validateHeaderAccountLogic(array &$validated)
+    private function processHeaderAccountLogic(array &$validated): void
     {
-        if ($validated['level'] == 1) {
+        if ($validated['level'] == ChartOfAccount::MIN_LEVEL) {
             $validated['header_account_id'] = null;
-        } elseif (empty($validated['header_account_id']) && $validated['level'] > 1) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['header_account_id' => 'Header account is required for sub-accounts.']);
+        } elseif (empty($validated['header_account_id']) && $validated['level'] > ChartOfAccount::MIN_LEVEL) {
+            throw new \InvalidArgumentException('Header account is required for sub-accounts.');
         }
     }
 
-    private function ensureAccountBelongsToCompany(ChartOfAccount $chartOfAccount)
+    private function authorizeAccountAccess(ChartOfAccount $chartOfAccount): void
     {
         if ($chartOfAccount->company_id !== tenant()->id) {
-            abort(403, 'Unauthorized action');
+            abort(403, 'Unauthorized access to this account.');
         }
-    }
-
-    private function performUpdate(ChartOfAccount $chartOfAccount, array $validated)
-    {
-        Log::info('Attempting to update ChartOfAccount', [
-            'id' => $chartOfAccount->id,
-            'company_id' => tenant()->id
-        ]);
-
-        $chartOfAccount->fill($validated);
-        $dirtyAttributes = $chartOfAccount->getDirty();
-
-        if (empty($dirtyAttributes)) {
-            Log::info('No changes detected for ChartOfAccount', ['id' => $chartOfAccount->id]);
-            return redirect()->route('accounting-setup.chart-of-accounts.index')
-                ->with('success', 'Account details are already up to date.');
-        }
-
-        Log::debug('Updating ChartOfAccount', [
-            'id' => $chartOfAccount->id,
-            'dirty_attributes' => $dirtyAttributes
-        ]);
-
-        try {
-            if (!$chartOfAccount->save()) {
-                Log::error('ChartOfAccount save() returned false', ['id' => $chartOfAccount->id]);
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'Failed to update account. Please check logs.');
-            }
-
-            Log::info('ChartOfAccount updated successfully', ['id' => $chartOfAccount->id]);
-            return redirect()->route('accounting-setup.chart-of-accounts.index')
-                ->with('success', 'Account updated successfully');
-
-        } catch (\Exception $e) {
-            Log::error('Exception during ChartOfAccount update', [
-                'id' => $chartOfAccount->id,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'An unexpected error occurred while updating the account.');
-        }
-    }
-
-    protected function getEligibleHeaderAccounts($companyId, $currentAccountId = null)
-    {
-        $query = ChartOfAccount::where('company_id', $companyId)
-            ->where('account_nature', 'General')
-            ->orderBy('account_code');
-                       
-        if ($currentAccountId) {
-            $query->where('id', '!=', $currentAccountId);
-        }
-        
-        return $query->get();
     }
 }
