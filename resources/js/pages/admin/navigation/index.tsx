@@ -1,5 +1,5 @@
-import type { SortDirection } from '@/components/CRUD-index';
-import { CrudIndex } from '@/components/CRUD-index';
+import type { SortDirection } from '@/components/DataTable';
+import { CrudIndex } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
