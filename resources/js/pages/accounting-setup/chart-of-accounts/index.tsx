@@ -24,7 +24,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
             <div className="p-4 md:p-8">
                 <Card>
                     <CardHeader>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                             <div>
                                 <CardTitle>Chart of Accounts</CardTitle>
                                 <CardDescription>Manage your company's chart of accounts. This data is company-specific.</CardDescription>
@@ -41,6 +41,7 @@ export default function ChartOfAccountsIndex({ accounts }: ChartOfAccountsPagePr
                             data={accounts.data}
                             searchColumn="account_name"
                             searchPlaceholder="Filter accounts..."
+                            tableKey="chart-of-accounts" // Unique key for this table
                         />
                     </CardContent>
                 </Card>
