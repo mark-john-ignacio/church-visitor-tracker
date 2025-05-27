@@ -235,7 +235,7 @@ export function DataTable<TData, TValue>({
     );
 
     // Debounced search ref
-    const searchTimeoutRef = React.useRef<NodeJS.Timeout>();
+    const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
     const handleSearchInput = React.useCallback(
         (value: string) => {
@@ -246,7 +246,7 @@ export function DataTable<TData, TValue>({
                 searchTimeoutRef.current = setTimeout(() => {
                     handleSearch(value);
                 }, 500);
-            } else {
+            } else if (searchColumn) {
                 table.getColumn(searchColumn)?.setFilterValue(value);
             }
         },
