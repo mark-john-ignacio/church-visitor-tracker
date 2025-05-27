@@ -9,147 +9,137 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Permission;
 
 class NavigationController extends Controller
 {
+    private const ITEMS_PER_PAGE = 15;
+
     public function index(Request $request): Response
     {
-        $query = MenuItem::with('parent');
-
-        // Handle search
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('route', 'like', "%{$searchTerm}%")
-                  ->orWhere('icon', 'like', "%{$searchTerm}%");
-            });
-        }
-        
-        // Handle sorting
-        if ($request->has('sort') && !empty($request->sort)) {
-            $sortColumn = $request->sort;
-            $sortDirection = $request->order ?? 'asc';
-            
-            // Validate sort direction
-            if (!in_array($sortDirection, ['asc', 'desc'])) {
-                $sortDirection = 'asc';
-            }
-            
-            // List of allowed sortable columns for security
-            $allowedColumns = ['name', 'route', 'icon', 'type', 'order', 'created_at'];
-            
-            if (in_array($sortColumn, $allowedColumns)) {
-                $query->orderBy($sortColumn, $sortDirection);
-            } else {
-                $query->orderBy('order')->orderBy('type');
-            }
-        } else {
-            $query->orderBy('type')->orderBy('order');
-        }
-        
-        $navItems = $query->paginate(15)->withQueryString();
+        $navItems = MenuItem::with('parent')
+            ->search($request->search)
+            ->when($request->sort && in_array($request->sort, MenuItem::SORTABLE_COLUMNS), function ($query) use ($request) {
+                $direction = in_array($request->order, ['asc', 'desc']) ? $request->order : 'asc';
+                return $query->orderBy($request->sort, $direction);
+            }, function ($query) {
+                return $query->defaultOrder();
+            })
+            ->paginate(self::ITEMS_PER_PAGE)
+            ->withQueryString();
         
         return Inertia::render('admin/navigation/index', [
             'navItems' => $navItems,
+            'filters' => $request->only(['search', 'sort', 'order']),
         ]);
     }
 
     public function create(): Response
     {
-        $permissions = Permission::pluck('name', 'id');
-        $parentItems = MenuItem::whereNull('parent_id')
-            ->orderBy('type')
-            ->orderBy('order')
-            ->pluck('name', 'id');
-            
+        $permissions = Permission::pluck('name', 'name')->toArray();
+        $parentItems = MenuItem::getEligibleParents();
+
         return Inertia::render('admin/navigation/create', [
             'permissions' => $permissions,
-            'parentItems' => $parentItems,
-            'iconList' => $this->getIconList(),
-            'types' => ['main' => 'Main Navigation', 'footer' => 'Footer', 'user' => 'User Menu'],
+            'parentItems' => $parentItems->pluck('name', 'id')->toArray(),
+            'iconList' => MenuItem::getAvailableIcons(),
+            'types' => MenuItem::getAvailableTypes(),
         ]);
     }
 
     public function store(StoreNavigationRequest $request): RedirectResponse
     {
-        MenuItem::create($request->validated());
+        try {
+            DB::transaction(function () use ($request) {
+                MenuItem::create($request->validated());
+            });
 
-        return redirect()
-            ->route('admin.navigation.index')
-            ->with('success', 'Navigation item created.');
+            return redirect()
+                ->route('admin.navigation.index')
+                ->with('success', 'Navigation item created successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create navigation item', [
+                'error' => $e->getMessage(),
+                'data' => $request->validated()
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create navigation item. Please try again.');
+        }
     }
 
     public function edit(MenuItem $navigation): Response
     {
-        $permissions = Permission::pluck('name', 'id');
-        $parentItems = MenuItem::where('id', '!=', $navigation->id)
-            ->whereNull('parent_id')
-            ->orderBy('type')
-            ->orderBy('order')
-            ->pluck('name', 'id');
-            
+        $permissions = Permission::pluck('name', 'name')->toArray();
+        $parentItems = MenuItem::getEligibleParents($navigation->id);
+
         return Inertia::render('admin/navigation/edit', [
             'navigationItem' => $navigation,
             'permissions' => $permissions,
-            'parentItems' => $parentItems,
-            'iconList' => $this->getIconList(),
-            'types' => ['main' => 'Main Navigation', 'footer' => 'Footer', 'user' => 'User Menu'],
+            'parentItems' => $parentItems->pluck('name', 'id')->toArray(),
+            'iconList' => MenuItem::getAvailableIcons(),
+            'types' => MenuItem::getAvailableTypes(),
         ]);
     }
 
     public function update(UpdateNavigationRequest $request, MenuItem $navigation): RedirectResponse
     {
-        $navigation->update($request->validated());
-        
-        return redirect()
-            ->route('admin.navigation.index')
-            ->with('success', 'Navigation item updated.');
+        try {
+            DB::transaction(function () use ($navigation, $request) {
+                $navigation->fill($request->validated());
+
+                if (!$navigation->isDirty()) {
+                    return redirect()
+                        ->route('admin.navigation.index')
+                        ->with('info', 'No changes were made to the navigation item.');
+                }
+
+                $navigation->save();
+            });
+
+            return redirect()
+                ->route('admin.navigation.index')
+                ->with('success', 'Navigation item updated successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update navigation item', [
+                'id' => $navigation->id,
+                'error' => $e->getMessage(),
+                'data' => $request->validated()
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update navigation item. Please try again.');
+        }
     }
 
     public function destroy(MenuItem $navigation): RedirectResponse
     {
-        // Check if this item has children
-        if ($navigation->children()->count() > 0) {
+        if (!$navigation->canBeDeleted()) {
             return back()->with('error', 'This item has child menu items. Please remove them first.');
         }
-        
-        $navigation->delete();
-        
-        return redirect()
-            ->route('admin.navigation.index')
-            ->with('success', 'Navigation item deleted.');
-    }
-    
-    /**
-     * Get list of available icons
-     */
-    private function getIconList(): array
-    {
-        // Common Lucide icons used for navigation
-        return [
-            'LayoutGrid' => 'Layout Grid',
-            'Users' => 'Users',
-            'Settings' => 'Settings',
-            'ChartBar' => 'Chart Bar',
-            'FileText' => 'File Text',
-            'Wallet' => 'Wallet',
-            'CreditCard' => 'Credit Card',
-            'Shield' => 'Shield',
-            'Bell' => 'Bell',
-            'BookOpen' => 'Book Open',
-            'Folder' => 'Folder',
-            'Menu' => 'Menu',
-            'Key' => 'Key',
-            'Landmark' => 'Landmark',
-            'Banknote' => 'Banknote',
-            'Clipboard' => 'Clipboard',
-            'BarChart' => 'Bar Chart',
-            'LineChart' => 'Line Chart',
-            'PieChart' => 'Pie Chart',
-            'Building' => 'Building',
-            'CircleDollarSign' => 'Circle Dollar Sign',
-        ];
+
+        try {
+            DB::transaction(function () use ($navigation) {
+                $navigation->delete();
+            });
+
+            return redirect()
+                ->route('admin.navigation.index')
+                ->with('success', 'Navigation item deleted successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to delete navigation item', [
+                'id' => $navigation->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to delete navigation item. Please try again.');
+        }
     }
 }
