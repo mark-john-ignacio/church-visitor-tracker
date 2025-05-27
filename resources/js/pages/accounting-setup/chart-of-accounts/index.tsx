@@ -63,7 +63,7 @@ export default function ChartOfAccountsIndex({ accounts, filters }: ChartOfAccou
                             getDeleteConfirmationMessage={getDeleteConfirmationMessage}
                             serverSide={true}
                             pagination={paginationInfo}
-                            filters={filters} // Pass filters to sync with server state
+                            filters={filters}
                         />
                     </CardContent>
                 </Card>

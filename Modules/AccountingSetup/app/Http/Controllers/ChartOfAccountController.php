@@ -14,15 +14,13 @@ use Inertia\Response;
 
 class ChartOfAccountController extends Controller
 {
-    
     private const ITEMS_PER_PAGE = 15;
-
 
     public function index(Request $request): Response
     {
         $accounts = ChartOfAccount::query()
             ->search($request->search)
-            ->when($request->sort, function ($query) use ($request) {
+            ->when($request->sort && in_array($request->sort, ChartOfAccount::SORTABLE_COLUMNS), function ($query) use ($request) {
                 $direction = in_array($request->order, ['asc', 'desc']) ? $request->order : 'asc';
                 return $query->orderBy($request->sort, $direction);
             }, function ($query) {
@@ -33,7 +31,7 @@ class ChartOfAccountController extends Controller
 
         return Inertia::render('accounting-setup/chart-of-accounts/index', [
             'accounts' => $accounts,
-            'filters' => $request->only(['search', 'sort', 'order']), 
+            'filters' => $request->only(['search', 'sort', 'order']),
         ]);
     }
 
@@ -43,6 +41,8 @@ class ChartOfAccountController extends Controller
 
         return Inertia::render('accounting-setup/chart-of-accounts/create', [
             'headerAccounts' => $headerAccounts,
+            'accountCategories' => ChartOfAccount::getAvailableCategories(),
+            'accountTypes' => ChartOfAccount::getAvailableTypes(),
         ]);
     }
 
@@ -86,6 +86,8 @@ class ChartOfAccountController extends Controller
         return Inertia::render('accounting-setup/chart-of-accounts/edit', [
             'account' => $chartOfAccount,
             'headerAccounts' => $headerAccounts,
+            'accountCategories' => ChartOfAccount::getAvailableCategories(),
+            'accountTypes' => ChartOfAccount::getAvailableTypes(),
         ]);
     }
 
@@ -167,8 +169,8 @@ class ChartOfAccountController extends Controller
                     ->ignore($account?->id)
             ],
             'account_name' => 'required|string|max:255',
-            'account_type' => 'required|string|max:50',
-            'account_nature' => ['required', Rule::in([ChartOfAccount::NATURE_GENERAL, ChartOfAccount::NATURE_DETAIL])],
+            'account_category' => ['required', Rule::in(ChartOfAccount::getAvailableCategories())],
+            'account_type' => ['required', Rule::in(ChartOfAccount::getAvailableTypes())],
             'is_contra_account' => 'required|boolean',
             'level' => 'required|integer|min:' . ChartOfAccount::MIN_LEVEL . '|max:' . ChartOfAccount::MAX_LEVEL,
             'header_account_id' => [

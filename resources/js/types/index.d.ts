@@ -97,23 +97,19 @@ export interface Navigation {
 // ===== CHART OF ACCOUNTS TYPES =====
 export interface ChartOfAccount {
     id: number;
-    company_id: string;
+    company_id: number;
     account_code: string;
     account_name: string;
-    account_type: string;
-    account_nature: 'General' | 'Detail';
+    account_category: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'COST OF SALES' | 'EXPENSES';
+    account_type: 'General' | 'Detail';
     is_contra_account: boolean;
     level: number;
-    header_account_id: number | null;
-    description: string | null;
+    header_account_id?: number;
+    header_account?: ChartOfAccount;
+    description?: string;
     is_active: boolean;
     created_at: string;
     updated_at: string;
-    header_account?: {
-        id: number;
-        account_code: string;
-        account_name: string;
-    } | null;
 }
 
 export interface HeaderAccountOption {

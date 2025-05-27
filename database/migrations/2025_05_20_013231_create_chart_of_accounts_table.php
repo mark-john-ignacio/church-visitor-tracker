@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->string('account_code');
             $table->string('account_name');
-            $table->string('account_type');
+            $table->enum('account_category', ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'COST OF SALES', 'EXPENSES']);
 
-            $table->enum('account_nature', ['General', 'Detail'])->default('Detail'); 
+            $table->enum('account_type', ['General', 'Detail'])->default('Detail'); 
             $table->boolean('is_contra_account')->default(false);
             $table->unsignedTinyInteger('level')->default(1);
             $table->foreignId('header_account_id')->nullable()->constrained('chart_of_accounts')->onDelete('set null');

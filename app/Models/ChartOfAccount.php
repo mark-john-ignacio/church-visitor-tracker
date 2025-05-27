@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Traits\BelongsToCompany;
@@ -7,24 +8,42 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\AccountingSetup\Database\Factories\ChartOfAccountFactory;
 
 class ChartOfAccount extends Model
 {
     use HasFactory, BelongsToCompany;
 
-    // Constants
-    public const NATURE_GENERAL = 'General';
-    public const NATURE_DETAIL = 'Detail';
+    // Constants for account categories
+    public const CATEGORY_ASSET = 'ASSET';
+    public const CATEGORY_LIABILITY = 'LIABILITY';
+    public const CATEGORY_EQUITY = 'EQUITY';
+    public const CATEGORY_REVENUE = 'REVENUE';
+    public const CATEGORY_COST_OF_SALES = 'COST OF SALES';
+    public const CATEGORY_EXPENSES = 'EXPENSES';
+
+    // Constants for account types (formerly nature)
+    public const TYPE_GENERAL = 'General';
+    public const TYPE_DETAIL = 'Detail';
     public const MAX_LEVEL = 5;
     public const MIN_LEVEL = 1;
+
+    // Define sortable columns
+    public const SORTABLE_COLUMNS = [
+        'account_code',
+        'account_name', 
+        'account_category',
+        'account_type',
+        'level',
+        'created_at',
+        'is_active'
+    ];
 
     protected $fillable = [
         'company_id',
         'account_code',
         'account_name',
-        'account_type',
-        'account_nature',
+        'account_category', // Changed from account_type
+        'account_type',     // Changed from account_nature
         'is_contra_account',
         'level',
         'header_account_id',
@@ -59,12 +78,17 @@ class ChartOfAccount extends Model
 
     public function scopeGeneral(Builder $query): Builder
     {
-        return $query->where('account_nature', self::NATURE_GENERAL);
+        return $query->where('account_type', self::TYPE_GENERAL);
     }
 
     public function scopeDetail(Builder $query): Builder
     {
-        return $query->where('account_nature', self::NATURE_DETAIL);
+        return $query->where('account_type', self::TYPE_DETAIL);
+    }
+
+    public function scopeByCategory(Builder $query, string $category): Builder
+    {
+        return $query->where('account_category', $category);
     }
 
     public function scopeTopLevel(Builder $query): Builder
@@ -81,7 +105,7 @@ class ChartOfAccount extends Model
         return $query->where(function (Builder $q) use ($search) {
             $q->where('account_code', 'like', "%{$search}%")
               ->orWhere('account_name', 'like', "%{$search}%")
-              ->orWhere('account_type', 'like', "%{$search}%")
+              ->orWhere('account_category', 'like', "%{$search}%")
               ->orWhere('description', 'like', "%{$search}%");
         });
     }
@@ -105,12 +129,12 @@ class ChartOfAccount extends Model
 
     public function isGeneral(): bool
     {
-        return $this->account_nature === self::NATURE_GENERAL;
+        return $this->account_type === self::TYPE_GENERAL;
     }
 
     public function isDetail(): bool
     {
-        return $this->account_nature === self::NATURE_DETAIL;
+        return $this->account_type === self::TYPE_DETAIL;
     }
 
     public function hasSubAccounts(): bool
@@ -120,7 +144,6 @@ class ChartOfAccount extends Model
 
     public function canBeDeleted(): bool
     {
-        // Add business logic for when an account can be deleted
         return !$this->hasSubAccounts() && $this->is_active;
     }
 
@@ -133,8 +156,31 @@ class ChartOfAccount extends Model
             ->get();
     }
 
-    protected static function newFactory(): ChartOfAccountFactory
+    public static function getAvailableCategories(): array
     {
-        return ChartOfAccountFactory::new();
+        return [
+            self::CATEGORY_ASSET,
+            self::CATEGORY_LIABILITY,
+            self::CATEGORY_EQUITY,
+            self::CATEGORY_REVENUE,
+            self::CATEGORY_COST_OF_SALES,
+            self::CATEGORY_EXPENSES,
+        ];
+    }
+
+    public static function getAvailableTypes(): array
+    {
+        return [
+            self::TYPE_GENERAL,
+            self::TYPE_DETAIL,
+        ];
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return \Modules\AccountingSetup\Database\Factories\ChartOfAccountFactory::new();
     }
 }

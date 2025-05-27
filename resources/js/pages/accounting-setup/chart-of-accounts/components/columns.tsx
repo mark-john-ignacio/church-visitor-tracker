@@ -30,12 +30,25 @@ export const chartOfAccountsColumns: ColumnDef<ChartOfAccount>[] = [
         ),
     },
     {
-        accessorKey: 'account_type',
-        header: 'Type',
+        accessorKey: 'account_category',
+        header: ({ column }) => (
+            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+                Category
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+        cell: ({ row }) => {
+            const category = row.getValue('account_category') as string;
+            return <Badge variant="outline">{category}</Badge>;
+        },
     },
     {
-        accessorKey: 'account_nature',
-        header: 'Nature',
+        accessorKey: 'account_type',
+        header: 'Type',
+        cell: ({ row }) => {
+            const type = row.getValue('account_type') as string;
+            return <Badge variant={type === 'General' ? 'default' : 'secondary'}>{type}</Badge>;
+        },
     },
     {
         accessorKey: 'level',

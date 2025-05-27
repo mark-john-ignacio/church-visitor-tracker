@@ -6,8 +6,9 @@ import { ChartOfAccountForm } from './components/form';
 
 interface EditChartOfAccountProps extends ChartOfAccountEditPageProps {}
 
-export default function EditChartOfAccount({ account, headerAccounts }: EditChartOfAccountProps) {
+export default function EditChartOfAccount({ account, headerAccounts, accountCategories, accountTypes }: EditChartOfAccountProps) {
     const { errors } = usePage().props;
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Masterfiles', href: '#' },
         { title: 'Accounting Setup', href: '#' },
@@ -18,8 +19,8 @@ export default function EditChartOfAccount({ account, headerAccounts }: EditChar
     const defaultValues = {
         account_code: account.account_code,
         account_name: account.account_name,
-        account_type: account.account_type,
-        account_nature: account.account_nature,
+        account_category: account.account_category, // Changed from account_type
+        account_type: account.account_type, // Changed from account_nature
         is_contra_account: account.is_contra_account,
         level: account.level,
         header_account_id: account.header_account_id,
@@ -42,6 +43,8 @@ export default function EditChartOfAccount({ account, headerAccounts }: EditChar
                             url={route('accounting-setup.chart-of-accounts.update', account.id)}
                             method="put"
                             headerAccounts={headerAccounts}
+                            accountCategories={accountCategories as string[] | undefined}
+                            accountTypes={accountTypes as string[] | undefined}
                             errors={errors}
                         />
                     </CardContent>

@@ -15,8 +15,8 @@ class ChartOfAccountFactory extends Factory
             'company_id' => 1,
             'account_code' => $this->faker->unique()->numerify('####'),
             'account_name' => $this->faker->words(3, true),
-            'account_type' => $this->faker->randomElement(['Assets', 'Liabilities', 'Equity', 'Revenue', 'Expenses']),
-            'account_nature' => $this->faker->randomElement([ChartOfAccount::NATURE_GENERAL, ChartOfAccount::NATURE_DETAIL]),
+            'account_category' => $this->faker->randomElement(ChartOfAccount::getAvailableCategories()),
+            'account_type' => $this->faker->randomElement(ChartOfAccount::getAvailableTypes()),
             'is_contra_account' => $this->faker->boolean(20),
             'level' => $this->faker->numberBetween(ChartOfAccount::MIN_LEVEL, ChartOfAccount::MAX_LEVEL),
             'header_account_id' => null,
@@ -30,7 +30,7 @@ class ChartOfAccountFactory extends Factory
         return $this->state([
             'level' => ChartOfAccount::MIN_LEVEL,
             'header_account_id' => null,
-            'account_nature' => ChartOfAccount::NATURE_GENERAL,
+            'account_type' => ChartOfAccount::TYPE_GENERAL,
         ]);
     }
 
@@ -38,9 +38,49 @@ class ChartOfAccountFactory extends Factory
     {
         return $this->state([
             'level' => $this->faker->numberBetween(2, ChartOfAccount::MAX_LEVEL),
-            'account_nature' => ChartOfAccount::NATURE_DETAIL,
+            'account_type' => ChartOfAccount::TYPE_DETAIL,
             'header_account_id' => $headerAccountId,
         ]);
+    }
+
+    public function general(): static
+    {
+        return $this->state(['account_type' => ChartOfAccount::TYPE_GENERAL]);
+    }
+
+    public function detail(): static
+    {
+        return $this->state(['account_type' => ChartOfAccount::TYPE_DETAIL]);
+    }
+
+    public function asset(): static
+    {
+        return $this->state(['account_category' => ChartOfAccount::CATEGORY_ASSET]);
+    }
+
+    public function liability(): static
+    {
+        return $this->state(['account_category' => ChartOfAccount::CATEGORY_LIABILITY]);
+    }
+
+    public function equity(): static
+    {
+        return $this->state(['account_category' => ChartOfAccount::CATEGORY_EQUITY]);
+    }
+
+    public function revenue(): static
+    {
+        return $this->state(['account_category' => ChartOfAccount::CATEGORY_REVENUE]);
+    }
+
+    public function costOfSales(): static
+    {
+        return $this->state(['account_category' => ChartOfAccount::CATEGORY_COST_OF_SALES]);
+    }
+
+    public function expenses(): static
+    {
+        return $this->state(['account_category' => ChartOfAccount::CATEGORY_EXPENSES]);
     }
 
     public function active(): static

@@ -67,33 +67,29 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
         $tenancy->initialize($companyA);
 
         if (!ChartOfAccount::where('account_code', '1000')->exists()) {
-            ChartOfAccount::create([
-                'company_id' => $companyA->id,
-                'account_code' => '1000',
-                'account_name' => 'Assets (General)',
-                'account_type' => 'Asset',
-                'account_nature' => 'General', 
-                'is_contra_account' => false, 
-                'level' => 1, 
-                'header_account_id' => null,
-                'description' => 'Main asset group',
-                'is_active' => true,
-            ]);
+            ChartOfAccount::factory()->topLevel()
+                ->general()
+                ->asset()
+                ->create([
+                    'company_id' => $companyA->id,
+                    'account_code' => '1000',
+                    'account_name' => 'Assets',
+                    'description' => 'All assets of the company',
+                    'is_active' => true,
+                ]);
         }
 
         if (!ChartOfAccount::where('account_code', '2000')->exists()) {
-            ChartOfAccount::create([
-                'company_id' => $companyA->id,
-                'account_code' => '1100',
-                'account_name' => 'Cash', // Example: Level 2 Detail Account under '1000'
-                'account_type' => 'Asset',
-                'account_nature' => 'Detail', // New
-                'is_contra_account' => false, // New
-                'level' => 2, // New
-                'header_account_id' => ChartOfAccount::where('company_id', $companyA->id)->where('account_code', '1000')->first()->id, // New
-                'description' => 'Cash on hand and in bank',
-                'is_active' => true,
-            ]);
+            ChartOfAccount::factory()->detail()
+                ->asset()
+                ->create([
+                    'company_id' => $companyA->id,
+                    'account_code' => '2000',
+                    'account_name' => 'Cash',
+                    'header_account_id' => ChartOfAccount::where('company_id', $companyA->id)->where('account_code', '1000')->first()->id,
+                    'description' => 'Cash on hand and in bank',
+                    'is_active' => true,
+                ]);
         }
 
         // End tenancy for Company A
@@ -103,46 +99,42 @@ class CompanyAndChartOfAccountsSeeder extends Seeder
         $tenancy->initialize($companyB);
 
         if (!ChartOfAccount::where('account_code', 'B1000')->exists()) {
-            ChartOfAccount::create([
-                'company_id' => $companyB->id,
-                'account_code' => 'B1000',
-                'account_name' => 'Bank Account',
-                'account_type' => 'Asset',
-                'account_nature' => 'General',
-                'is_contra_account' => false, 
-                'level' => 1,
-                'header_account_id' => null,
-                'description' => 'Main bank account',
-                'is_active' => true,
-            ]);
+            ChartOfAccount::factory()->topLevel()
+                ->general()
+                ->asset()
+                ->create([
+                    'company_id' => $companyB->id,
+                    'account_code' => 'B1000',
+                    'account_name' => 'Assets',
+                    'description' => 'All assets of Company B',
+                    'is_active' => true,
+                ]);
         }
 
         if (!ChartOfAccount::where('account_code', 'B3000')->exists()) {
-            ChartOfAccount::create([
-                'company_id' => $companyB->id,
-                'account_code' => 'B3000',
-                'account_name' => 'Equipment',
-                'account_type' => 'Asset',
-                'account_nature' => 'Detail',
-                'is_contra_account' => false,
-                'level' => 2,
-                'header_account_id' => ChartOfAccount::where('company_id', $companyB->id)->where('account_code', 'B1000')->first()->id, // New,
-                'description' => 'Office equipment',
-                'is_active' => true,
-            ]);
+            ChartOfAccount::factory()->detail()
+                ->asset()
+                ->create([
+                    'company_id' => $companyB->id,
+                    'account_code' => 'B3000',
+                    'account_name' => 'Accounts Receivable',
+                    'header_account_id' => ChartOfAccount::where('company_id', $companyB->id)->where('account_code', 'B1000')->first()->id,
+                    'description' => 'Money owed by customers',
+                    'is_active' => true,
+                ]);
         }
-        ChartOfAccount::create([
-            'company_id' => $companyB->id,
-            'account_code' => 'B5000',
-            'account_name' => 'Revenue',
-            'account_type' => 'Income',
-            'account_nature' => 'Detail',
-            'is_contra_account' => false,
-            'level' => 2,
-            'header_account_id' => ChartOfAccount::where('company_id', $companyB->id)->where('account_code', 'B1000')->first()->id,
-            'description' => 'Main revenue account',
-            'is_active' => true,
-        ]);
+        if (!ChartOfAccount::where('account_code', 'B5000')->exists()) {
+            ChartOfAccount::factory()->detail()
+                ->revenue()
+                ->create([
+                    'company_id' => $companyB->id,
+                    'account_code' => 'B5000',
+                    'account_name' => 'Sales Revenue',
+                    'header_account_id' => ChartOfAccount::where('company_id', $companyB->id)->where('account_code', 'B1000')->first()->id,
+                    'description' => 'Revenue from sales',
+                    'is_active' => true,
+                ]);
+        }
 
         // End tenancy for Company B
         $tenancy->end();

@@ -17,6 +17,8 @@ interface ChartOfAccountFormProps {
     method: 'post' | 'put';
     disabled?: boolean;
     headerAccounts: HeaderAccountOption[];
+    accountCategories?: string[];
+    accountTypes?: string[];
     errors?: Record<string, string>;
 }
 
@@ -24,8 +26,8 @@ const formSchema = z
     .object({
         account_code: z.string().min(1, 'Account code is required'),
         account_name: z.string().min(1, 'Account name is required'),
-        account_type: z.string().min(1, 'Account type is required'),
-        account_nature: z.enum(['General', 'Detail'], { required_error: 'Account nature is required' }),
+        account_category: z.string().min(1, 'Account category is required'), // Changed from account_type
+        account_type: z.enum(['General', 'Detail'], { required_error: 'Account type is required' }), // Changed from account_nature
         is_contra_account: z.boolean(),
         level: z.number().min(1).max(5, 'Level must be between 1 and 5'),
         header_account_id: z.number().nullable().optional(),
@@ -41,9 +43,9 @@ const formSchema = z
         path: ['header_account_id'],
     });
 
-// Constants
-const ACCOUNT_TYPES = ['Asset', 'Liability', 'Equity', 'Income', 'Expense', 'Other'];
-const ACCOUNT_NATURES = ['General', 'Detail'] as const;
+// Constants - Updated to match backend
+const ACCOUNT_CATEGORIES = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'COST OF SALES', 'EXPENSES']; // Changed from ACCOUNT_TYPES
+const ACCOUNT_TYPES = ['General', 'Detail']; // Changed from ACCOUNT_NATURES
 const LEVELS = [1, 2, 3, 4, 5];
 const NULL_VALUE = '__NULL_VALUE__';
 
@@ -51,8 +53,8 @@ const NULL_VALUE = '__NULL_VALUE__';
 const normalizeFormData = (values: Partial<ChartOfAccount>) => ({
     account_code: values.account_code || '',
     account_name: values.account_name || '',
-    account_type: values.account_type || '',
-    account_nature: values.account_nature || ('Detail' as const),
+    account_category: values.account_category || '', // Changed from account_type
+    account_type: values.account_type || ('Detail' as const), // Changed from account_nature
     is_contra_account: Boolean(values.is_contra_account),
     level: Number(values.level) || 1,
     header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
@@ -60,7 +62,16 @@ const normalizeFormData = (values: Partial<ChartOfAccount>) => ({
     is_active: Boolean(values.is_active ?? true),
 });
 
-export function ChartOfAccountForm({ defaultValues, url, method, disabled = false, headerAccounts, errors = {} }: ChartOfAccountFormProps) {
+export function ChartOfAccountForm({
+    defaultValues,
+    url,
+    method,
+    disabled = false,
+    headerAccounts,
+    accountCategories = ACCOUNT_CATEGORIES,
+    accountTypes = ACCOUNT_TYPES,
+    errors = {},
+}: ChartOfAccountFormProps) {
     const normalizedDefaults = normalizeFormData(defaultValues);
     const [processing, setProcessing] = useState(false);
 
@@ -88,8 +99,8 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
         const submitData = {
             account_code: values.account_code,
             account_name: values.account_name,
-            account_type: values.account_type,
-            account_nature: values.account_nature,
+            account_category: values.account_category, // Changed from account_type
+            account_type: values.account_type, // Changed from account_nature
             is_contra_account: Boolean(values.is_contra_account),
             level: Number(values.level),
             header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
@@ -163,8 +174,34 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                     />
                 </div>
 
-                {/* Account Type and Nature */}
+                {/* Account Category and Type */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="account_category"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Account Category</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select account category" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {accountCategories.map((category) => (
+                                            <SelectItem key={category} value={category}>
+                                                {category}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Primary classification of the account (Asset, Liability, etc.)</FormDescription>
+                                <FormMessage />
+                                {errors.account_category && <FormMessage>{errors.account_category}</FormMessage>}
+                            </FormItem>
+                        )}
+                    />
                     <FormField
                         control={form.control}
                         name="account_type"
@@ -178,40 +215,16 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {ACCOUNT_TYPES.map((type) => (
+                                        {accountTypes.map((type) => (
                                             <SelectItem key={type} value={type}>
                                                 {type}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FormDescription>General accounts can have sub-accounts, Detail accounts cannot</FormDescription>
                                 <FormMessage />
                                 {errors.account_type && <FormMessage>{errors.account_type}</FormMessage>}
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="account_nature"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Account Nature</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select nature" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {ACCOUNT_NATURES.map((nature) => (
-                                            <SelectItem key={nature} value={nature}>
-                                                {nature}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                {errors.account_nature && <FormMessage>{errors.account_nature}</FormMessage>}
                             </FormItem>
                         )}
                     />
@@ -238,11 +251,12 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                                     <SelectContent>
                                         {LEVELS.map((level) => (
                                             <SelectItem key={level} value={level.toString()}>
-                                                {level}
+                                                Level {level}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FormDescription>Hierarchy level (1 = top level, 5 = deepest)</FormDescription>
                                 <FormMessage />
                                 {errors.level && <FormMessage>{errors.level}</FormMessage>}
                             </FormItem>
@@ -286,22 +300,26 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                 {/* Checkboxes */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {[
-                        { name: 'is_contra_account' as const, label: 'Contra Account', description: 'Is this a contra account?' },
-                        { name: 'is_active' as const, label: 'Active', description: 'Is this account active?' },
+                        {
+                            name: 'is_contra_account' as const,
+                            label: 'Contra Account',
+                            description: 'Is this a contra account (reduces the normal balance)?',
+                        },
+                        { name: 'is_active' as const, label: 'Active', description: 'Is this account currently active and usable?' },
                     ].map(({ name, label, description }) => (
                         <FormField
                             key={name}
                             control={form.control}
                             name={name}
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">{label}</FormLabel>
-                                        <FormDescription>{description}</FormDescription>
-                                    </div>
+                                <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4">
                                     <FormControl>
                                         <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={disabled} />
                                     </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel>{label}</FormLabel>
+                                        <FormDescription>{description}</FormDescription>
+                                    </div>
                                 </FormItem>
                             )}
                         />
@@ -317,32 +335,32 @@ export function ChartOfAccountForm({ defaultValues, url, method, disabled = fals
                             <FormLabel>Description</FormLabel>
                             <FormControl>
                                 <Textarea
-                                    placeholder="Optional description"
+                                    placeholder="Optional description for this account"
                                     className="resize-none"
                                     {...field}
                                     value={field.value || ''}
                                     disabled={disabled}
+                                    rows={3}
                                 />
                             </FormControl>
+                            <FormDescription>Additional details about this account (optional)</FormDescription>
                             <FormMessage />
                             {errors.description && <FormMessage>{errors.description}</FormMessage>}
                         </FormItem>
                     )}
                 />
 
-                <div className="flex justify-end">
-                    {/* cancel */}
+                <div className="flex justify-end space-x-2">
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                         onClick={() => router.get(route('accounting-setup.chart-of-accounts.index'))}
                         disabled={processing || disabled}
-                        className="mr-2"
                     >
                         Cancel
                     </Button>
                     <Button type="submit" disabled={processing || disabled}>
-                        {method === 'post' ? 'Create' : 'Update'} Account
+                        {processing ? 'Processing...' : method === 'post' ? 'Create Account' : 'Update Account'}
                     </Button>
                 </div>
             </form>
