@@ -1,7 +1,9 @@
 <?php
+<?php
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -40,5 +42,35 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Create a user with admin role.
+     */
+    public function admin(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->assignRole('admin');
+        });
+    }
+
+    /**
+     * Create a user with super admin role.
+     */
+    public function superAdmin(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->assignRole('super_admin');
+        });
+    }
+
+    /**
+     * Create a user with basic user role.
+     */
+    public function basicUser(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->assignRole('user');
+        });
     }
 }

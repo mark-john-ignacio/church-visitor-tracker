@@ -3,32 +3,36 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreUserRequest;
-use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 use Spatie\Permission\Models\Role;
 
 class UserManagementController extends Controller
 {
+    /**
+     * Display a listing of the users.
+     */
     public function index(Request $request): Response
     {
         $query = User::with('roles');
-        
+
         // Handle search
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
                   ->orWhere('email', 'like', "%{$searchTerm}%");
             });
         }
-        
+
         // Handle sorting
-        if ($request->has('sort') && !empty($request->sort)) {
+        if ($request->filled('sort')) {
             $sortColumn = $request->sort;
             $sortDirection = $request->order ?? 'asc';
             
@@ -38,7 +42,7 @@ class UserManagementController extends Controller
             }
             
             // List of allowed sortable columns for security
-            $allowedColumns = ['name', 'email', 'created_at', 'updated_at'];
+            $allowedColumns = ['name', 'email', 'created_at', 'updated_at', 'email_verified_at'];
             
             if (in_array($sortColumn, $allowedColumns)) {
                 $query->orderBy($sortColumn, $sortDirection);
@@ -53,7 +57,10 @@ class UserManagementController extends Controller
         
         $users = $query->paginate(15)->withQueryString();
         
-        return Inertia::render('admin/users/index', compact('users'));
+        return Inertia::render('admin/users/index', [
+            'users' => $users,
+            'filters' => $request->only(['search', 'sort', 'order']),
+        ]);
     }
 
     /**
@@ -61,31 +68,46 @@ class UserManagementController extends Controller
      */
     public function create(): Response
     {
-        $roles = Role::pluck('name', 'id');
+        $roles = Role::pluck('name', 'name')->toArray();
         $superAdminExists = User::role('super_admin')->exists();
+
         return Inertia::render('admin/users/create', [
             'roles' => $roles,
-            'superAdminExists' => $superAdminExists
+            'superAdminExists' => $superAdminExists,
         ]);
     }
 
     /**
-     * Store a newly created user.
+     * Store a newly created user in storage.
      */
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        if (in_array('super_admin', $request->roles)) {
-            if (User::role('super_admin')->exists()) {
-                return back()->with('error', 'There can only be one Super Admin user');
-            }
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['required', 'string', 'exists:roles,name'],
+        ]);
+
+        try {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
+
+            $user->assignRole($validated['roles']);
+
+            return redirect()
+                ->route('admin.users.index')
+                ->with('success', 'User created successfully');
+
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create user. Please try again.');
         }
-        
-        $user = User::create($request->validatedWithHash());
-        $user->syncRoles($request->roles);
-        
-        return redirect()
-            ->route('admin.users.index')
-            ->with('success', 'User created successfully');
     }
 
     /**
@@ -93,66 +115,90 @@ class UserManagementController extends Controller
      */
     public function edit(User $user): Response
     {
+        $roles = Role::pluck('name', 'name')->toArray();
         $isSuperAdmin = $user->hasRole('super_admin');
         $canEdit = !$isSuperAdmin || $user->id === auth()->id();
-        
-        $roles = Role::pluck('name', 'id');
-        $superAdminExists = User::role('super_admin')
-            ->where('id', '!=', $user->id)
-            ->exists();
-        
+        $superAdminExists = User::role('super_admin')->exists();
+
+        $user->load('roles');
+
         return Inertia::render('admin/users/edit', [
-            'user' => $user->load('roles'),
+            'user' => $user,
             'roles' => $roles,
             'isSuperAdmin' => $isSuperAdmin,
             'canEdit' => $canEdit,
-            'superAdminExists' => $superAdminExists
+            'superAdminExists' => $superAdminExists,
         ]);
     }
 
     /**
-     * Update the specified user.
+     * Update the specified user in storage.
      */
-    public function update(UpdateUserRequest $request, User $user): RedirectResponse
+    public function update(Request $request, User $user): RedirectResponse
     {
-        // Check if user has super_admin role and not current user
-        if ($user->hasRole('super_admin') && $user->id !== auth()->id()) {
-            return back()->with('error', 'Super Admin users can only be edited by themselves');
-        }
+        $isSuperAdmin = $user->hasRole('super_admin');
         
-        // Prevent removing super_admin role from super_admin
-        if ($user->hasRole('super_admin') && !in_array('super_admin', $request->roles)) {
-            return back()->with('error', 'Cannot remove Super Admin role from this user');
+        // Only allow editing if user is not super admin or is editing themselves
+        if ($isSuperAdmin && $user->id !== auth()->id()) {
+            abort(403, 'Cannot edit super admin users.');
         }
-        
-        // Prevent assigning super_admin if it already exists
-        if (!$user->hasRole('super_admin') && in_array('super_admin', $request->roles)) {
-            if (User::role('super_admin')->exists()) {
-                return back()->with('error', 'There can only be one Super Admin user');
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['required', 'string', 'exists:roles,name'],
+        ]);
+
+        try {
+            $updateData = [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ];
+
+            if (!empty($validated['password'])) {
+                $updateData['password'] = Hash::make($validated['password']);
             }
+
+            $user->update($updateData);
+            $user->syncRoles($validated['roles']);
+
+            return redirect()
+                ->route('admin.users.index')
+                ->with('success', 'User updated successfully');
+
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update user. Please try again.');
         }
-        
-        $user->update($request->validatedWithHash());
-        $user->syncRoles($request->roles);
-        
-        return redirect()
-            ->route('admin.users.index')
-            ->with('success', 'User updated successfully');
     }
 
     /**
-     * Remove the specified user.
+     * Remove the specified user from storage.
      */
     public function destroy(User $user): RedirectResponse
     {
+        // Prevent deletion of super admin users
         if ($user->hasRole('super_admin')) {
-            return back()->with('error', 'Super Admin users cannot be deleted');
+            return back()->with('error', 'Cannot delete super admin users.');
         }
-        
-        $user->delete();
 
-        return redirect()
-            ->route('admin.users.index')
-            ->with('success', 'User deleted successfully');
+        // Prevent users from deleting themselves
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot delete your own account.');
+        }
+
+        try {
+            $user->delete();
+
+            return redirect()
+                ->route('admin.users.index')
+                ->with('success', 'User deleted successfully');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to delete user. Please try again.');
+        }
     }
 }
