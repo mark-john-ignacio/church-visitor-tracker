@@ -1,5 +1,4 @@
 import type { Preview } from '@storybook/react';
-import React from 'react';
 import '../resources/css/app.css';
 
 const preview: Preview = {
@@ -8,7 +7,7 @@ const preview: Preview = {
         controls: {
             matchers: {
                 color: /(background|color)$/i,
-                date: /Date$/i,
+                date: /Date$/,
             },
         },
         docs: {
@@ -17,9 +16,9 @@ const preview: Preview = {
     },
     decorators: [
         (Story) => (
-      <div className="p-6 max-w-6xl mx-auto">
-        <Story />
-      </div>
+            <div className="mx-auto max-w-6xl p-6">
+                <Story />
+            </div>
         ),
     ],
 };

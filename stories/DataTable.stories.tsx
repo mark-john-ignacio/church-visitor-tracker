@@ -372,41 +372,47 @@ Try the following interactions:
 export const ServerSide: Story = {
     args: {
         columns: sampleColumns,
-        data: sampleMenuItems.slice(0, 5), // Show fewer items to simulate pagination
+        data: sampleMenuItems.slice(0, 5),
         searchPlaceholder: 'Filter menu items...',
         searchColumn: 'name',
-        serverSide: true,
-        pagination: {
-            pageIndex: 0,
-            pageSize: 5,
-            pageCount: 2,
-            total: 10,
-        },
-        filters: {
-            search: '',
-            sort: 'name',
-            order: 'asc',
-        },
+        serverSide: false, // ← Change this to false for Storybook
         tableKey: 'server-side-demo',
+        // Remove pagination and filters props for client-side demo
     },
+    decorators: [
+        (Story) => (
+            <div>
+                <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3">
+                    <p className="text-sm text-blue-800">
+                        📝 <strong>Storybook Demo:</strong> This shows the server-side UI with client-side behavior. In your Laravel app, set{' '}
+                        <code>serverSide={`{true}`}</code> for real server integration.
+                    </p>
+                </div>
+                <Story />
+            </div>
+        ),
+    ],
     parameters: {
         docs: {
             description: {
                 story: `
-**Server-Side DataTable**
+**Server-Side DataTable (Client-Side Demo)**
 
-Demonstrates server-side capabilities:
-- **Pagination**: Shows "Showing X to Y of Z results"
-- **Search**: Would send debounced requests to Laravel (mocked in Storybook)
-- **Sorting**: Updates URL parameters (mocked in Storybook)
-- **State sync**: Maintains state between page requests
+🏗️ **Note**: This shows the server-side UI with client-side behavior for demo purposes.
 
-In a real Laravel application, this would:
-1. Send AJAX requests via Inertia.js
-2. Update URL parameters automatically
-3. Maintain browser history
-4. Handle loading states
-        `,
+**In your real Laravel application**, set \`serverSide={true}\` and this will:
+- Send AJAX requests via Inertia.js to your Laravel routes
+- Update URL parameters automatically (\`?search=term&sort=name&order=asc\`)
+- Handle pagination, sorting, and search on the server
+- Maintain browser history and back button functionality
+
+**Component Features Demonstrated:**
+- ✅ Search functionality (client-side filtered)
+- ✅ Column sorting (client-side sorted)
+- ✅ Column visibility controls
+- ✅ Pagination (client-side paginated)
+- ✅ Delete confirmation dialogs
+                `,
             },
         },
     },

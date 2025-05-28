@@ -22,6 +22,9 @@ const config: StorybookConfig = {
             css: {
                 postcss: path.resolve(__dirname, '../postcss.config.js'),
             },
+            define: {
+                global: 'globalThis',
+            },
         });
     },
 };
