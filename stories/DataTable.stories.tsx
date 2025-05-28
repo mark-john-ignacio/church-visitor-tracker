@@ -253,6 +253,7 @@ const sampleColumns: ColumnDef<SampleMenuItem>[] = [
 const meta: Meta<typeof DataTable> = {
     title: 'Components/DataTable',
     component: DataTable,
+    tags: ['autodocs'],
     parameters: {
         layout: 'fullscreen',
         docs: {
