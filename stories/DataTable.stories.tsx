@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
-import { DataTable } from '../resources/js/components/data-table';
+import { DataTable, useDeleteConfirmation } from '../resources/js/components/data-table';
 import { Badge } from '../resources/js/components/ui/badge';
 import { Button } from '../resources/js/components/ui/button';
 import {
@@ -221,34 +221,52 @@ const sampleColumns: ColumnDef<SampleMenuItem>[] = [
         cell: ({ row }) => {
             const item = row.original;
 
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem className="cursor-pointer">
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit {item.name}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer">
-                            <ArrowUpDown className="mr-2 h-4 w-4" />
-                            Reorder
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete {item.name}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            );
+            return <ActionsCell item={item} />;
         },
     },
 ];
+
+function ActionsCell({ item }: { item: SampleMenuItem }) {
+    const { confirmDelete } = useDeleteConfirmation();
+
+    const handleDelete = () => {
+        confirmDelete(
+            item,
+            () => {
+                console.log('Deleted:', item.name);
+                // In a real app, this would make an API call
+                alert(`Deleted ${item.name} successfully!`);
+            },
+            `Are you sure you want to delete "${item.name}"? This will remove it from the ${item.type} navigation.`,
+        );
+    };
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => console.log('Edit:', item.name)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit {item.name}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => console.log('Reorder:', item.name)}>
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    Reorder
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={handleDelete}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {item.name}
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
 
 const meta: Meta<typeof DataTable> = {
     title: 'Components/DataTable',
@@ -375,9 +393,8 @@ export const ServerSide: Story = {
         data: sampleMenuItems.slice(0, 5),
         searchPlaceholder: 'Filter menu items...',
         searchColumn: 'name',
-        serverSide: false, // ← Change this to false for Storybook
+        serverSide: false,
         tableKey: 'server-side-demo',
-        // Remove pagination and filters props for client-side demo
     },
     decorators: [
         (Story) => (
