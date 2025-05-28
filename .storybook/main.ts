@@ -4,7 +4,10 @@ import { mergeConfig } from 'vite';
 
 const config: StorybookConfig = {
     stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx|mdx)'],
-    addons: ['@storybook/addon-links', '@storybook/addon-essentials', '@storybook/addon-interactions', '@storybook/addon-docs'],
+    addons: [
+        '@storybook/addon-essentials',
+        'storybook-dark-mode', // Add dark mode addon
+    ],
     framework: {
         name: '@storybook/react-vite',
         options: {},
