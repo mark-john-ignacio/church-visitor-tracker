@@ -1,10 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { ArrowUpDown, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
 import { DataTable } from '../resources/js/components/data-table';
 import { Badge } from '../resources/js/components/ui/badge';
 import { Button } from '../resources/js/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../resources/js/components/ui/dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '../resources/js/components/ui/dropdown-menu';
 
 // Sample data types
 interface SampleMenuItem {
@@ -17,7 +23,7 @@ interface SampleMenuItem {
     created_at: string;
 }
 
-// Sample data
+// Expanded sample data for better demonstration
 const sampleMenuItems: SampleMenuItem[] = [
     {
         id: 1,
@@ -30,7 +36,7 @@ const sampleMenuItems: SampleMenuItem[] = [
     },
     {
         id: 2,
-        name: 'Users',
+        name: 'Users Management',
         route: 'admin.users.index',
         icon: 'Users',
         type: 'main',
@@ -39,50 +45,113 @@ const sampleMenuItems: SampleMenuItem[] = [
     },
     {
         id: 3,
+        name: 'Chart of Accounts',
+        route: 'accounting-setup.chart-of-accounts.index',
+        icon: 'Calculator',
+        type: 'main',
+        order: 3,
+        created_at: '2024-01-15T10:32:00Z',
+    },
+    {
+        id: 4,
         name: 'Settings',
         route: 'settings',
         icon: 'Settings',
         type: 'user',
         order: 1,
-        created_at: '2024-01-15T10:32:00Z',
+        created_at: '2024-01-15T10:33:00Z',
     },
     {
-        id: 4,
+        id: 5,
+        name: 'Profile',
+        route: 'profile.edit',
+        icon: 'User',
+        type: 'user',
+        order: 2,
+        created_at: '2024-01-15T10:34:00Z',
+    },
+    {
+        id: 6,
         name: 'Privacy Policy',
         route: 'privacy',
         icon: null,
         type: 'footer',
         order: 1,
-        created_at: '2024-01-15T10:33:00Z',
+        created_at: '2024-01-15T10:35:00Z',
     },
     {
-        id: 5,
+        id: 7,
         name: 'Terms of Service',
         route: 'terms',
         icon: null,
         type: 'footer',
         order: 2,
-        created_at: '2024-01-15T10:34:00Z',
+        created_at: '2024-01-15T10:36:00Z',
+    },
+    {
+        id: 8,
+        name: 'Reports',
+        route: 'reports.index',
+        icon: 'BarChart',
+        type: 'main',
+        order: 4,
+        created_at: '2024-01-15T10:37:00Z',
+    },
+    {
+        id: 9,
+        name: 'Help Center',
+        route: 'help',
+        icon: 'HelpCircle',
+        type: 'footer',
+        order: 3,
+        created_at: '2024-01-15T10:38:00Z',
+    },
+    {
+        id: 10,
+        name: 'Banks Setup',
+        route: 'accounting-setup.banks.index',
+        icon: 'Landmark',
+        type: 'main',
+        order: 5,
+        created_at: '2024-01-15T10:39:00Z',
     },
 ];
 
-// Sample columns
+// Enhanced columns with better styling
 const sampleColumns: ColumnDef<SampleMenuItem>[] = [
     {
         accessorKey: 'name',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="hover:bg-muted/50">
                 Name
                 <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         ),
+        cell: ({ row }) => {
+            const name = row.getValue('name') as string;
+            const icon = row.original.icon;
+            return (
+                <div className="flex items-center gap-2">
+                    {icon && (
+                        <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-md">
+                            <span className="text-primary text-xs font-medium">{icon.slice(0, 2)}</span>
+                        </div>
+                    )}
+                    <div className="font-medium">{name}</div>
+                </div>
+            );
+        },
     },
     {
         accessorKey: 'route',
         header: 'Route',
         cell: ({ row }) => {
             const route = row.getValue('route') as string;
-            return route || <span className="text-muted-foreground">—</span>;
+            return route ? (
+                <code className="bg-muted rounded px-2 py-1 font-mono text-sm">{route}</code>
+            ) : (
+                <span className="text-muted-foreground italic">No route</span>
+            );
         },
     },
     {
@@ -90,8 +159,16 @@ const sampleColumns: ColumnDef<SampleMenuItem>[] = [
         header: 'Type',
         cell: ({ row }) => {
             const type = row.getValue('type') as string;
-            const variant = type === 'main' ? 'default' : type === 'footer' ? 'outline' : 'secondary';
-            return <Badge variant={variant}>{type}</Badge>;
+            const variants = {
+                main: 'default' as const,
+                footer: 'outline' as const,
+                user: 'secondary' as const,
+            };
+            return (
+                <Badge variant={variants[type as keyof typeof variants]} className="capitalize">
+                    {type}
+                </Badge>
+            );
         },
     },
     {
@@ -99,20 +176,30 @@ const sampleColumns: ColumnDef<SampleMenuItem>[] = [
         header: 'Icon',
         cell: ({ row }) => {
             const icon = row.getValue('icon') as string;
-            return icon ? <Badge variant="outline">{icon}</Badge> : <span className="text-muted-foreground">—</span>;
+            return icon ? (
+                <Badge variant="outline" className="font-mono text-xs">
+                    {icon}
+                </Badge>
+            ) : (
+                <span className="text-muted-foreground">—</span>
+            );
         },
     },
     {
         accessorKey: 'order',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="hover:bg-muted/50">
                 Order
                 <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         ),
         cell: ({ row }) => {
             const order = row.getValue('order') as number;
-            return <div className="text-center">{order}</div>;
+            return (
+                <div className="text-center">
+                    <span className="bg-muted inline-flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium">{order}</span>
+                </div>
+            );
         },
     },
     {
@@ -120,11 +207,17 @@ const sampleColumns: ColumnDef<SampleMenuItem>[] = [
         header: 'Created',
         cell: ({ row }) => {
             const date = new Date(row.getValue('created_at'));
-            return date.toLocaleDateString();
+            return (
+                <div className="text-sm">
+                    <div className="font-medium">{date.toLocaleDateString()}</div>
+                    <div className="text-muted-foreground">{date.toLocaleTimeString()}</div>
+                </div>
+            );
         },
     },
     {
         id: 'actions',
+        header: 'Actions',
         cell: ({ row }) => {
             const item = row.original;
 
@@ -136,9 +229,20 @@ const sampleColumns: ColumnDef<SampleMenuItem>[] = [
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit {item.name}</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Delete {item.name}</DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem className="cursor-pointer">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit {item.name}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer">
+                            <ArrowUpDown className="mr-2 h-4 w-4" />
+                            Reorder
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete {item.name}
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             );
@@ -150,6 +254,7 @@ const meta: Meta<typeof DataTable> = {
     title: 'Components/DataTable',
     component: DataTable,
     parameters: {
+        layout: 'fullscreen',
         docs: {
             description: {
                 component: `
@@ -165,56 +270,39 @@ A comprehensive, feature-rich data table component built for Laravel + Inertia.j
 - **Responsive design**: Mobile-friendly with column hiding capabilities
 - **Inertia.js integration**: Seamless state synchronization with Laravel
 
-## Architecture
+## Visual Features
 
-The DataTable component works with this flow:
-1. **User interaction** (search, sort, paginate) → Updates URL parameters
-2. **Inertia.js** sends request to Laravel controller
-3. **Laravel controller** processes filters and returns paginated data
-4. **DataTable** re-renders with new data
+- **Enhanced cells**: Rich cell rendering with icons, badges, and formatted data
+- **Sortable headers**: Click column headers to sort (with visual indicators)
+- **Action menus**: Dropdown menus for row-level actions
+- **Type badges**: Color-coded badges for different menu types
+- **Responsive layout**: Adapts to different screen sizes
 
-## Server-Side Integration
-
-Works perfectly with this Laravel controller pattern:
-
-\`\`\`php
-public function index(Request $request): Response
-{
-    $items = MenuItem::with('parent')
-        ->search($request->search)
-        ->when($request->sort, fn($q) => $q->orderBy($request->sort, $request->order ?? 'asc'))
-        ->paginate(15)
-        ->withQueryString();
-    
-    return Inertia::render('admin/navigation/index', [
-        'items' => $items,
-        'filters' => $request->only(['search', 'sort', 'order']),
-    ]);
-}
-\`\`\`
-
-## TypeScript Integration
-
-Use with proper TypeScript interfaces:
+## Usage in Real Application
 
 \`\`\`tsx
-interface MenuItem {
-    id: number;
-    name: string;
-    route: string | null;
-    type: 'main' | 'footer' | 'user';
-    // ... other properties
+// In your Laravel + Inertia page component
+export default function NavigationIndex({ navItems, filters }) {
+    return (
+        <AppLayout>
+            <DataTable
+                columns={navigationColumns}
+                data={navItems.data}
+                searchColumn="name"
+                searchPlaceholder="Search menu items..."
+                serverSide={true}
+                pagination={{
+                    pageIndex: navItems.current_page - 1,
+                    pageSize: navItems.per_page,
+                    pageCount: navItems.last_page,
+                    total: navItems.total,
+                }}
+                filters={filters}
+                tableKey="navigation-table"
+            />
+        </AppLayout>
+    );
 }
-
-const columns: ColumnDef<MenuItem>[] = [
-    // ... column definitions
-];
-
-<DataTable<MenuItem, any>
-    columns={columns}
-    data={menuItems.data}
-    serverSide={true}
-/>
 \`\`\`
         `,
             },
@@ -223,7 +311,7 @@ const columns: ColumnDef<MenuItem>[] = [
     argTypes: {
         columns: {
             control: false,
-            description: 'Array of TanStack Table column definitions',
+            description: 'Array of TanStack Table column definitions with enhanced styling',
         },
         data: {
             control: false,
@@ -233,13 +321,13 @@ const columns: ColumnDef<MenuItem>[] = [
             control: 'text',
             description: 'Placeholder text for search input',
         },
-        searchColumn: {
-            control: 'text',
-            description: 'Column key to search (for client-side search)',
-        },
         serverSide: {
             control: 'boolean',
             description: 'Enable server-side features (pagination, search, sorting)',
+        },
+        tableKey: {
+            control: 'text',
+            description: 'Unique identifier for localStorage preferences',
         },
     },
 };
@@ -247,18 +335,34 @@ const columns: ColumnDef<MenuItem>[] = [
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const BasicClientSide: Story = {
+export const Default: Story = {
     args: {
         columns: sampleColumns,
         data: sampleMenuItems,
         searchPlaceholder: 'Search menu items...',
         searchColumn: 'name',
-        serverSide: false,
+        tableKey: 'demo-table',
     },
     parameters: {
         docs: {
             description: {
-                story: 'Basic client-side table with search and column controls. All data is loaded upfront.',
+                story: `
+**Default DataTable Example**
+
+This shows the DataTable with all features enabled:
+- ✅ Search functionality
+- ✅ Column sorting with visual indicators
+- ✅ Column visibility controls
+- ✅ Enhanced cell rendering
+- ✅ Action dropdown menus
+- ✅ Responsive design
+
+Try the following interactions:
+- **Search**: Type in the search box to filter items
+- **Sort**: Click column headers to sort data
+- **Columns**: Use the "Columns" dropdown to show/hide columns
+- **Actions**: Click the menu button in the Actions column
+        `,
             },
         },
     },
@@ -267,63 +371,109 @@ export const BasicClientSide: Story = {
 export const ServerSide: Story = {
     args: {
         columns: sampleColumns,
-        data: sampleMenuItems,
+        data: sampleMenuItems.slice(0, 5), // Show fewer items to simulate pagination
         searchPlaceholder: 'Filter menu items...',
         searchColumn: 'name',
         serverSide: true,
         pagination: {
             pageIndex: 0,
-            pageSize: 15,
-            pageCount: 5,
-            total: 67,
+            pageSize: 5,
+            pageCount: 2,
+            total: 10,
         },
         filters: {
             search: '',
             sort: 'name',
             order: 'asc',
         },
+        tableKey: 'server-side-demo',
     },
     parameters: {
         docs: {
             description: {
                 story: `
-**Server-side table example**
+**Server-Side DataTable**
 
-This demonstrates how the table works with Laravel backend:
-- Search sends requests to server with debouncing
-- Sorting updates URL parameters and triggers server request  
-- Pagination fetches new pages from server
-- State is synchronized between frontend and backend
+Demonstrates server-side capabilities:
+- **Pagination**: Shows "Showing X to Y of Z results"
+- **Search**: Would send debounced requests to Laravel (mocked in Storybook)
+- **Sorting**: Updates URL parameters (mocked in Storybook)
+- **State sync**: Maintains state between page requests
 
-*Note: In Storybook, server requests are mocked, but in real application this would communicate with your Laravel API.*
+In a real Laravel application, this would:
+1. Send AJAX requests via Inertia.js
+2. Update URL parameters automatically
+3. Maintain browser history
+4. Handle loading states
         `,
             },
         },
     },
 };
 
-export const WithCustomDeleteMessage: Story = {
+export const ClientSideOnly: Story = {
     args: {
         columns: sampleColumns,
         data: sampleMenuItems,
+        searchPlaceholder: 'Search menu items...',
         searchColumn: 'name',
-        getDeleteConfirmationMessage: (item: SampleMenuItem) =>
-            `Are you sure you want to delete the menu item "${item.name}"? This will affect navigation structure.`,
+        serverSide: false,
+        tableKey: 'client-side-demo',
     },
     parameters: {
         docs: {
             description: {
-                story: 'Table with custom delete confirmation messages. Each item type can have different confirmation text.',
+                story: `
+**Client-Side Only DataTable**
+
+Perfect for smaller datasets:
+- All data loaded upfront
+- Instant search and filtering
+- Client-side pagination
+- No server requests after initial load
+
+Use this mode when:
+- Dataset is small (< 1000 items)
+- You want instant interactions
+- Server-side processing isn't needed
+        `,
             },
         },
     },
 };
 
-export const ColumnVisibilityDemo: Story = {
+export const WithDeleteConfirmation: Story = {
+    args: {
+        columns: sampleColumns,
+        data: sampleMenuItems.slice(0, 5),
+        searchColumn: 'name',
+        getDeleteConfirmationMessage: (item: SampleMenuItem) =>
+            `Are you sure you want to delete "${item.name}"? This will remove it from the ${item.type} navigation and may affect user experience.`,
+        tableKey: 'delete-demo',
+    },
+    parameters: {
+        docs: {
+            description: {
+                story: `
+**Delete Confirmation System**
+
+- Custom confirmation messages per item
+- Contextual information in the message
+- Safe deletion workflow
+- Prevents accidental deletions
+
+Click the delete action in any row to see the confirmation dialog.
+        `,
+            },
+        },
+    },
+};
+
+export const ColumnCustomization: Story = {
     args: {
         columns: sampleColumns,
         data: sampleMenuItems,
-        tableKey: 'demo-table',
+        tableKey: 'column-demo',
     },
     parameters: {
         docs: {
@@ -331,10 +481,13 @@ export const ColumnVisibilityDemo: Story = {
                 story: `
 **Column Visibility Management**
 
-- Use the "Columns" dropdown to show/hide columns
-- Preferences are saved to localStorage with the \`tableKey\`
-- "Reset" button restores all columns
-- Perfect for users who want to customize their view
+Features:
+- **Columns dropdown**: Show/hide any column
+- **Persistent preferences**: Saved to localStorage
+- **Reset button**: Restore all columns
+- **User customization**: Each user can customize their view
+
+Try hiding/showing different columns and notice how the table adapts.
         `,
             },
         },
