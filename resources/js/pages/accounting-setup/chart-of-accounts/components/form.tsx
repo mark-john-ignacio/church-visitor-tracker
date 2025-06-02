@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import { chartOfAccountSchema, type FormData, normalizeChartOfAccount } from './schema';
 
 interface ChartOfAccountFormProps {
     defaultValues: Partial<ChartOfAccount>;
@@ -22,45 +22,11 @@ interface ChartOfAccountFormProps {
     errors?: Record<string, string>;
 }
 
-const formSchema = z
-    .object({
-        account_code: z.string().min(1, 'Account code is required'),
-        account_name: z.string().min(1, 'Account name is required'),
-        account_category: z.string().min(1, 'Account category is required'), // Changed from account_type
-        account_type: z.enum(['General', 'Detail'], { required_error: 'Account type is required' }), // Changed from account_nature
-        is_contra_account: z.boolean(),
-        level: z.number().min(1).max(5, 'Level must be between 1 and 5'),
-        header_account_id: z.number().nullable().optional(),
-        description: z.string().nullable().optional(),
-        is_active: z.boolean(),
-    })
-    .refine((data) => data.level === 1 || data.header_account_id, {
-        message: 'Header account is required for levels 2-5',
-        path: ['header_account_id'],
-    })
-    .refine((data) => data.level > 1 || !data.header_account_id, {
-        message: 'Header account should be empty for level 1',
-        path: ['header_account_id'],
-    });
-
-// Constants - Updated to match backend
-const ACCOUNT_CATEGORIES = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'COST OF SALES', 'EXPENSES']; // Changed from ACCOUNT_TYPES
-const ACCOUNT_TYPES = ['General', 'Detail']; // Changed from ACCOUNT_NATURES
+// Constants
+const ACCOUNT_CATEGORIES = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'COST OF SALES', 'EXPENSES'];
+const ACCOUNT_TYPES = ['General', 'Detail'];
 const LEVELS = [1, 2, 3, 4, 5];
 const NULL_VALUE = '__NULL_VALUE__';
-
-// Helper function to normalize form data
-const normalizeFormData = (values: Partial<ChartOfAccount>) => ({
-    account_code: values.account_code || '',
-    account_name: values.account_name || '',
-    account_category: values.account_category || '', // Changed from account_type
-    account_type: values.account_type || ('Detail' as const), // Changed from account_nature
-    is_contra_account: Boolean(values.is_contra_account),
-    level: Number(values.level) || 1,
-    header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
-    description: values.description || '',
-    is_active: Boolean(values.is_active ?? true),
-});
 
 export function ChartOfAccountForm({
     defaultValues,
@@ -72,11 +38,11 @@ export function ChartOfAccountForm({
     accountTypes = ACCOUNT_TYPES,
     errors = {},
 }: ChartOfAccountFormProps) {
-    const normalizedDefaults = normalizeFormData(defaultValues);
+    const normalizedDefaults = normalizeChartOfAccount(defaultValues);
     const [processing, setProcessing] = useState(false);
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<FormData>({
+        resolver: zodResolver(chartOfAccountSchema),
         defaultValues: normalizedDefaults,
     });
 
@@ -91,16 +57,16 @@ export function ChartOfAccountForm({
 
     // Reset form when defaultValues change
     useEffect(() => {
-        const newDefaults = normalizeFormData(defaultValues);
+        const newDefaults = normalizeChartOfAccount(defaultValues);
         form.reset(newDefaults);
     }, [defaultValues, form]);
 
-    const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const onSubmit = (values: FormData) => {
         const submitData = {
             account_code: values.account_code,
             account_name: values.account_name,
-            account_category: values.account_category, // Changed from account_type
-            account_type: values.account_type, // Changed from account_nature
+            account_category: values.account_category,
+            account_type: values.account_type,
             is_contra_account: Boolean(values.is_contra_account),
             level: Number(values.level),
             header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
