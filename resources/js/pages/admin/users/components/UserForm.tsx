@@ -173,9 +173,14 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                     )}
                 />
 
-                <Button type="submit" className="w-full" disabled={disabled}>
-                    Save User
-                </Button>
+                <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => router.get(route('admin.users.index'))} disabled={disabled}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={disabled}>
+                        {method === 'put' ? 'Update User' : 'Create User'}
+                    </Button>
+                </div>
             </form>
         </FormProvider>
     );
