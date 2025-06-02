@@ -18,7 +18,7 @@ const config: Config = {
     url: 'http://myxfin_laravel_react.test/',
     // Set the /<baseUrl>/ pathname under which your site is served
     // For GitHub pages deployment, it is often '/<projectName>/'
-    baseUrl: '/myxfin-docs/',
+    baseUrl: '',
 
     // GitHub pages deployment config.
     // If you aren't using GitHub pages, you don't need these.
@@ -74,7 +74,7 @@ const config: Config = {
                 title: 'MyXFin Docs',
                 logo: {
                     alt: 'MyXFin Logo',
-                    src: 'img/logo.svg',
+                    src: 'img/favicon.ico',
                 },
                 items: [
                     {
@@ -122,10 +122,10 @@ const config: Config = {
                                 label: 'Components Demo',
                                 href: 'http://localhost:6006',
                             },
-                            {
-                                label: 'GitHub',
-                                href: 'https://github.com/your-org/myxfin',
-                            },
+                            // {
+                            //     label: 'GitHub',
+                            //     href: 'https://github.com/your-org/myxfin',
+                            // },
                         ],
                     },
                 ],
