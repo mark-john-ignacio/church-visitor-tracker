@@ -142,7 +142,15 @@ export function RoleForm({ defaultValues, permissions, url, method, onSuccess }:
                     )}
                 />
 
-                <div className="flex justify-end">
+                <div className="flex justify-end space-x-2">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => router.get(route('admin.roles.index'))}
+                        disabled={form.formState.isSubmitting}
+                    >
+                        Cancel
+                    </Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
                         {method === 'post' ? 'Create' : 'Update'} Role
                     </Button>
