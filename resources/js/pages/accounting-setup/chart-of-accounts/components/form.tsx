@@ -4,12 +4,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useStandardForm } from '@/hooks/use-standard-form';
 import { ChartOfAccount, HeaderAccountOption } from '@/types';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { chartOfAccountSchema, type FormData, normalizeChartOfAccount } from './schema';
+import { useEffect } from 'react';
+import { chartOfAccountSchema, normalizeChartOfAccount } from './schema';
 
 interface ChartOfAccountFormProps {
     defaultValues: Partial<ChartOfAccount>;
@@ -20,6 +19,7 @@ interface ChartOfAccountFormProps {
     accountCategories?: string[];
     accountTypes?: string[];
     errors?: Record<string, string>;
+    onSuccess?: () => void;
 }
 
 // Constants
@@ -37,13 +37,20 @@ export function ChartOfAccountForm({
     accountCategories = ACCOUNT_CATEGORIES,
     accountTypes = ACCOUNT_TYPES,
     errors = {},
+    onSuccess,
 }: ChartOfAccountFormProps) {
     const normalizedDefaults = normalizeChartOfAccount(defaultValues);
-    const [processing, setProcessing] = useState(false);
 
-    const form = useForm<FormData>({
-        resolver: zodResolver(chartOfAccountSchema),
+    const form = useStandardForm({
+        schema: chartOfAccountSchema,
         defaultValues: normalizedDefaults,
+        url,
+        method,
+        onSuccess,
+        successMessage: {
+            create: 'Account created successfully',
+            update: 'Account updated successfully',
+        },
     });
 
     const currentLevel = form.watch('level');
@@ -55,51 +62,6 @@ export function ChartOfAccountForm({
         }
     }, [currentLevel, form]);
 
-    // Reset form when defaultValues change
-    useEffect(() => {
-        const newDefaults = normalizeChartOfAccount(defaultValues);
-        form.reset(newDefaults);
-    }, [defaultValues, form]);
-
-    const onSubmit = (values: FormData) => {
-        const submitData = {
-            account_code: values.account_code,
-            account_name: values.account_name,
-            account_category: values.account_category,
-            account_type: values.account_type,
-            is_contra_account: Boolean(values.is_contra_account),
-            level: Number(values.level),
-            header_account_id: values.header_account_id ? Number(values.header_account_id) : null,
-            description: values.description || '',
-            is_active: Boolean(values.is_active),
-        };
-
-        console.log('Final submit data:', submitData);
-
-        setProcessing(true);
-
-        const submitOptions = {
-            preserveScroll: true,
-            onSuccess: () => {
-                console.log('Success');
-                setProcessing(false);
-            },
-            onError: (errors: any) => {
-                console.error('Error:', errors);
-                setProcessing(false);
-            },
-            onFinish: () => {
-                setProcessing(false);
-            },
-        };
-
-        if (method === 'post') {
-            router.post(url, submitData, submitOptions);
-        } else {
-            router.put(url, submitData, submitOptions);
-        }
-    };
-
     const headerAccountOptions = headerAccounts.map((acc) => ({
         ...acc,
         label: `${acc.account_code} - ${acc.account_name}`,
@@ -107,7 +69,7 @@ export function ChartOfAccountForm({
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(form.submit)} className="space-y-6">
                 {/* Account Code and Name */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
@@ -162,7 +124,7 @@ export function ChartOfAccountForm({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormDescription>Primary classification of the account (Asset, Liability, etc.)</FormDescription>
+                                <FormDescription>Primary classification of the account</FormDescription>
                                 <FormMessage />
                                 {errors.account_category && <FormMessage>{errors.account_category}</FormMessage>}
                             </FormItem>
@@ -188,7 +150,7 @@ export function ChartOfAccountForm({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormDescription>General accounts can have sub-accounts, Detail accounts cannot</FormDescription>
+                                <FormDescription>General accounts can have sub-accounts</FormDescription>
                                 <FormMessage />
                                 {errors.account_type && <FormMessage>{errors.account_type}</FormMessage>}
                             </FormItem>
@@ -222,7 +184,7 @@ export function ChartOfAccountForm({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormDescription>Hierarchy level (1 = top level, 5 = deepest)</FormDescription>
+                                <FormDescription>Hierarchy level (1 = top level)</FormDescription>
                                 <FormMessage />
                                 {errors.level && <FormMessage>{errors.level}</FormMessage>}
                             </FormItem>
@@ -255,7 +217,7 @@ export function ChartOfAccountForm({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormDescription>Required if Level is 2-5. Should be empty for Level 1.</FormDescription>
+                                <FormDescription>Required for Level 2-5</FormDescription>
                                 <FormMessage />
                                 {errors.header_account_id && <FormMessage>{errors.header_account_id}</FormMessage>}
                             </FormItem>
@@ -269,9 +231,13 @@ export function ChartOfAccountForm({
                         {
                             name: 'is_contra_account' as const,
                             label: 'Contra Account',
-                            description: 'Is this a contra account (reduces the normal balance)?',
+                            description: 'Reduces the normal balance',
                         },
-                        { name: 'is_active' as const, label: 'Active', description: 'Is this account currently active and usable?' },
+                        {
+                            name: 'is_active' as const,
+                            label: 'Active',
+                            description: 'Account is currently usable',
+                        },
                     ].map(({ name, label, description }) => (
                         <FormField
                             key={name}
@@ -309,7 +275,7 @@ export function ChartOfAccountForm({
                                     rows={3}
                                 />
                             </FormControl>
-                            <FormDescription>Additional details about this account (optional)</FormDescription>
+                            <FormDescription>Additional details (optional)</FormDescription>
                             <FormMessage />
                             {errors.description && <FormMessage>{errors.description}</FormMessage>}
                         </FormItem>
@@ -321,12 +287,12 @@ export function ChartOfAccountForm({
                         type="button"
                         variant="outline"
                         onClick={() => router.get(route('accounting-setup.chart-of-accounts.index'))}
-                        disabled={processing || disabled}
+                        disabled={form.isSubmitting || disabled}
                     >
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={processing || disabled}>
-                        {processing ? 'Processing...' : method === 'post' ? 'Create Account' : 'Update Account'}
+                    <Button type="submit" disabled={form.isSubmitting || disabled}>
+                        {form.isSubmitting ? 'Processing...' : method === 'post' ? 'Create Account' : 'Update Account'}
                     </Button>
                 </div>
             </form>

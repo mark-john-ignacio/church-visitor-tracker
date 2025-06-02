@@ -26,7 +26,6 @@ export const chartOfAccountSchema = z
 
 export type FormData = z.infer<typeof chartOfAccountSchema>;
 
-// normalize a partial ChartOfAccount into our FormData shape
 export function normalizeChartOfAccount(values: Partial<ChartOfAccount>): FormData {
     return {
         account_code: values.account_code ?? '',
