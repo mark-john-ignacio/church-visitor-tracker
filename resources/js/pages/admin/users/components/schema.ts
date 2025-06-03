@@ -1,28 +1,34 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
-export const schema = z
+export const userSchema = z
     .object({
-        name: z.string().min(2, 'Name is required'),
+        name: z.string().min(1, 'Name is required'),
         email: z.string().email('Invalid email address'),
-        // Fix password validation to allow empty strings for editing
-        password: z
-            .union([
-                z.string().min(8, 'Password must be at least 8 characters'),
-                z.string().max(0), // Allow empty string
-            ])
-            .optional(),
+        password: z.string().min(8, 'Password must be at least 8 characters').optional(),
         password_confirmation: z.string().optional(),
-        roles: z.array(z.string()).min(1, 'Select at least one role'),
+        roles: z.array(z.string()).min(1, 'At least one role must be selected'),
     })
-    .superRefine((data, ctx) => {
-        // Only validate password match if password is provided and not empty
-        if (data.password && data.password.length > 0 && data.password !== data.password_confirmation) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['password_confirmation'],
-                message: 'Passwords must match',
-            });
-        }
-    });
+    .refine(
+        (data) => {
+            if (data.password && data.password !== data.password_confirmation) {
+                return false;
+            }
+            return true;
+        },
+        {
+            message: "Passwords don't match",
+            path: ['password_confirmation'],
+        },
+    );
 
-export type FormData = z.infer<typeof schema>;
+export type FormData = z.infer<typeof userSchema>;
+
+export function normalizeUserData(values: Partial<FormData>): FormData {
+    return {
+        name: values.name ?? '',
+        email: values.email ?? '',
+        password: values.password ?? undefined,
+        password_confirmation: values.password_confirmation ?? undefined,
+        roles: values.roles ?? [],
+    };
+}

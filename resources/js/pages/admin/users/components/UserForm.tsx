@@ -1,16 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useStandardForm } from '@/hooks/use-standard-form';
 import { router } from '@inertiajs/react';
-import { useCallback, useEffect } from 'react';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { FormData, schema } from './schema';
+import { useCallback } from 'react';
+import { Controller } from 'react-hook-form';
+import { normalizeUserData, userSchema, type FormData } from './schema';
 
 interface Props {
-    defaultValues: FormData;
+    defaultValues: Partial<FormData>;
     roles: Record<string, string>;
     url: string;
     method: 'post' | 'put';
@@ -21,33 +20,19 @@ interface Props {
 }
 
 export function UserForm({ defaultValues, roles, url, method, onSuccess, disabled = false, superAdminExists = false, isSuperAdmin = false }: Props) {
-    const form = useForm<FormData>({
-        resolver: zodResolver(schema),
-        defaultValues,
+    const normalizedDefaults = normalizeUserData(defaultValues);
+
+    const form = useStandardForm({
+        schema: userSchema,
+        defaultValues: normalizedDefaults,
+        url,
+        method,
+        onSuccess,
+        successMessage: {
+            create: 'User created successfully',
+            update: 'User updated successfully',
+        },
     });
-
-    // Reset form on default values change
-    useEffect(() => {
-        form.reset(defaultValues);
-    }, [defaultValues]);
-
-    const submit = (data: FormData) => {
-        if (disabled) return;
-
-        router[method](url, data, {
-            onSuccess: () => {
-                toast.success('User saved successfully');
-                onSuccess?.();
-            },
-            onError: (errors) => {
-                if (errors.default) {
-                    toast.error(errors.default);
-                } else {
-                    toast.error('Error saving user');
-                }
-            },
-        });
-    };
 
     const setRoleChecked = useCallback((field: any, role: string, checked: boolean) => {
         const newRoles = checked ? [...field.value, role] : field.value.filter((r: string) => r !== role);
@@ -55,9 +40,9 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
     }, []);
 
     return (
-        <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
-                {/* Name field */}
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(form.submit)} className="space-y-6">
+                {/* Name */}
                 <FormField
                     control={form.control}
                     name="name"
@@ -72,7 +57,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                     )}
                 />
 
-                {/* Email field */}
+                {/* Email */}
                 <FormField
                     control={form.control}
                     name="email"
@@ -87,7 +72,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                     )}
                 />
 
-                {/* Password field */}
+                {/* Password */}
                 <FormField
                     control={form.control}
                     name="password"
@@ -103,7 +88,7 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                     )}
                 />
 
-                {/* Password confirmation field */}
+                {/* Password Confirmation */}
                 <FormField
                     control={form.control}
                     name="password_confirmation"
@@ -122,36 +107,39 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                 <FormField
                     control={form.control}
                     name="roles"
-                    render={({ field }) => (
+                    render={() => (
                         <FormItem>
-                            <fieldset>
-                                <FormLabel className="text-base font-medium">Roles</FormLabel>
-                                <FormControl>
-                                    <Controller
-                                        name="roles"
-                                        control={form.control}
-                                        render={({ field }) => (
-                                            <div role="group" aria-labelledby="roles-legend" className="space-y-2 pt-1">
-                                                {Object.entries(roles).map(([id, name]) => {
-                                                    const isSuperAdminRole = name === 'super_admin';
-                                                    const roleChecked = field.value.includes(name);
-                                                    const disableCheck =
-                                                        disabled ||
-                                                        (isSuperAdminRole && superAdminExists && !roleChecked) ||
-                                                        (isSuperAdminRole && roleChecked && isSuperAdmin);
+                            <div>
+                                <FormLabel>Roles</FormLabel>
+                                <FormDescription>Select the roles for this user</FormDescription>
+                            </div>
+                            <div className="space-y-2">
+                                <Controller
+                                    name="roles"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <div className="space-y-2">
+                                            {Object.entries(roles).map(([id, name]) => {
+                                                const isSuperAdminRole = name === 'super_admin';
+                                                const roleChecked = field.value.includes(name);
+                                                const disableCheck =
+                                                    disabled ||
+                                                    (isSuperAdminRole && superAdminExists && !roleChecked) ||
+                                                    (isSuperAdminRole && roleChecked && isSuperAdmin);
 
-                                                    return (
-                                                        <label key={id} className="flex items-center space-x-2">
+                                                return (
+                                                    <FormItem key={id} className="flex flex-row items-start space-y-0 space-x-3">
+                                                        <FormControl>
                                                             <Checkbox
                                                                 checked={roleChecked}
                                                                 disabled={disableCheck}
                                                                 onCheckedChange={(checked) => {
                                                                     setRoleChecked(field, name, !!checked);
                                                                 }}
-                                                                aria-label={`Role: ${name}`}
-                                                                aria-invalid={!!form.formState.errors.roles}
                                                             />
-                                                            <span>
+                                                        </FormControl>
+                                                        <div className="space-y-1 leading-none">
+                                                            <FormLabel className="cursor-pointer">
                                                                 {name}
                                                                 {isSuperAdminRole && roleChecked && isSuperAdmin && (
                                                                     <span className="ml-2 text-sm text-orange-600">(Cannot be removed)</span>
@@ -159,29 +147,34 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                                                                 {isSuperAdminRole && superAdminExists && !roleChecked && (
                                                                     <span className="ml-2 text-sm text-orange-600">(Already assigned)</span>
                                                                 )}
-                                                            </span>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </fieldset>
+                                                            </FormLabel>
+                                                        </div>
+                                                    </FormItem>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                />
+                            </div>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
 
                 <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={() => router.get(route('admin.users.index'))} disabled={disabled}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.get(route('admin.users.index'))}
+                        disabled={form.isSubmitting || disabled}
+                    >
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={disabled}>
-                        {method === 'put' ? 'Update User' : 'Create User'}
+                    <Button type="submit" disabled={form.isSubmitting || disabled}>
+                        {form.isSubmitting ? 'Processing...' : method === 'post' ? 'Create User' : 'Update User'}
                     </Button>
                 </div>
             </form>
-        </FormProvider>
+        </Form>
     );
 }

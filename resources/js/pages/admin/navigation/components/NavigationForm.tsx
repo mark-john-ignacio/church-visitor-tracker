@@ -1,16 +1,13 @@
 import { Button } from '@/components/ui/button';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useStandardForm } from '@/hooks/use-standard-form';
 import { router } from '@inertiajs/react';
-import { useEffect } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { schema, type FormData } from './schema';
+import { navigationSchema, normalizeNavigationData, type FormData } from './schema';
 
 interface Props {
-    defaultValues: FormData;
+    defaultValues: Partial<FormData>;
     url: string;
     method: 'post' | 'put';
     parentItems: Record<string, string>;
@@ -21,29 +18,23 @@ interface Props {
 }
 
 export function NavigationForm({ defaultValues, url, method, parentItems, permissions, iconList, types, onSuccess }: Props) {
-    const form = useForm<FormData>({
-        resolver: zodResolver(schema),
-        defaultValues,
+    const normalizedDefaults = normalizeNavigationData(defaultValues);
+
+    const form = useStandardForm({
+        schema: navigationSchema,
+        defaultValues: normalizedDefaults,
+        url,
+        method,
+        onSuccess,
+        successMessage: {
+            create: 'Navigation item created successfully',
+            update: 'Navigation item updated successfully',
+        },
     });
 
-    // Reset form when defaultValues change (editing different item)
-    useEffect(() => {
-        form.reset(defaultValues);
-    }, [defaultValues]);
-
-    const submit = (data: FormData) => {
-        router[method](url, data, {
-            onSuccess: () => {
-                toast.success('Navigation item saved successfully');
-                onSuccess?.();
-            },
-            onError: () => toast.error('Error saving navigation item'),
-        });
-    };
-
     return (
-        <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(form.submit)} className="space-y-6">
                 {/* Name */}
                 <FormField
                     control={form.control}
@@ -83,7 +74,7 @@ export function NavigationForm({ defaultValues, url, method, parentItems, permis
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Navigation Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select type" />
@@ -110,7 +101,7 @@ export function NavigationForm({ defaultValues, url, method, parentItems, permis
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Icon</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value || ''} value={field.value || ''}>
+                            <Select onValueChange={(value) => field.onChange(value === 'none' ? null : value)} value={field.value || 'none'}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select icon (optional)" />
@@ -140,7 +131,6 @@ export function NavigationForm({ defaultValues, url, method, parentItems, permis
                             <FormLabel>Parent Item</FormLabel>
                             <Select
                                 onValueChange={(value) => field.onChange(value === 'none' ? null : Number(value))}
-                                defaultValue={field.value?.toString() || 'none'}
                                 value={field.value?.toString() || 'none'}
                             >
                                 <FormControl>
@@ -193,11 +183,7 @@ export function NavigationForm({ defaultValues, url, method, parentItems, permis
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Required Permission</FormLabel>
-                            <Select
-                                onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
-                                defaultValue={field.value || 'none'}
-                                value={field.value || 'none'}
-                            >
+                            <Select onValueChange={(value) => field.onChange(value === 'none' ? null : value)} value={field.value || 'none'}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select permission (optional)" />
@@ -218,10 +204,15 @@ export function NavigationForm({ defaultValues, url, method, parentItems, permis
                     )}
                 />
 
-                <Button type="submit" className="w-full">
-                    Save Navigation Item
-                </Button>
+                <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => router.get(route('admin.navigation.index'))} disabled={form.isSubmitting}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={form.isSubmitting}>
+                        {form.isSubmitting ? 'Processing...' : method === 'post' ? 'Create Navigation Item' : 'Update Navigation Item'}
+                    </Button>
+                </div>
             </form>
-        </FormProvider>
+        </Form>
     );
 }
