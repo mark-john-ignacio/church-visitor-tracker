@@ -4,8 +4,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { useStandardForm } from '@/hooks/use-standard-form';
 import { router } from '@inertiajs/react';
-import { useCallback } from 'react';
-import { Controller } from 'react-hook-form';
 import { normalizeUserData, userSchema, type FormData } from './schema';
 
 interface Props {
@@ -33,11 +31,6 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
             update: 'User updated successfully',
         },
     });
-
-    const setRoleChecked = useCallback((field: any, role: string, checked: boolean) => {
-        const newRoles = checked ? [...field.value, role] : field.value.filter((r: string) => r !== role);
-        field.onChange(newRoles);
-    }, []);
 
     return (
         <Form {...form}>
@@ -107,54 +100,50 @@ export function UserForm({ defaultValues, roles, url, method, onSuccess, disable
                 <FormField
                     control={form.control}
                     name="roles"
-                    render={() => (
+                    render={({ field }) => (
                         <FormItem>
-                            <div>
-                                <FormLabel>Roles</FormLabel>
+                            <div className="mb-4">
+                                <FormLabel className="text-base">Roles</FormLabel>
                                 <FormDescription>Select the roles for this user</FormDescription>
                             </div>
-                            <div className="space-y-2">
-                                <Controller
-                                    name="roles"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <div className="space-y-2">
-                                            {Object.entries(roles).map(([id, name]) => {
-                                                const isSuperAdminRole = name === 'super_admin';
-                                                const roleChecked = field.value.includes(name);
-                                                const disableCheck =
-                                                    disabled ||
-                                                    (isSuperAdminRole && superAdminExists && !roleChecked) ||
-                                                    (isSuperAdminRole && roleChecked && isSuperAdmin);
+                            <div className="space-y-3 rounded-md border p-4">
+                                {Object.entries(roles).map(([id, name]) => {
+                                    const isSuperAdminRole = name === 'super_admin';
+                                    const isChecked = field.value?.includes(name) || false;
+                                    const shouldDisable =
+                                        disabled ||
+                                        (isSuperAdminRole && superAdminExists && !isChecked) ||
+                                        (isSuperAdminRole && isChecked && isSuperAdmin);
 
-                                                return (
-                                                    <FormItem key={id} className="flex flex-row items-start space-y-0 space-x-3">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={roleChecked}
-                                                                disabled={disableCheck}
-                                                                onCheckedChange={(checked) => {
-                                                                    setRoleChecked(field, name, !!checked);
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <div className="space-y-1 leading-none">
-                                                            <FormLabel className="cursor-pointer">
-                                                                {name}
-                                                                {isSuperAdminRole && roleChecked && isSuperAdmin && (
-                                                                    <span className="ml-2 text-sm text-orange-600">(Cannot be removed)</span>
-                                                                )}
-                                                                {isSuperAdminRole && superAdminExists && !roleChecked && (
-                                                                    <span className="ml-2 text-sm text-orange-600">(Already assigned)</span>
-                                                                )}
-                                                            </FormLabel>
-                                                        </div>
-                                                    </FormItem>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                />
+                                    return (
+                                        <FormItem key={id} className="flex flex-row items-start space-y-0 space-x-3">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={isChecked}
+                                                    disabled={shouldDisable}
+                                                    onCheckedChange={(checked) => {
+                                                        const currentRoles = field.value || [];
+                                                        const updatedRoles = checked
+                                                            ? [...currentRoles, name]
+                                                            : currentRoles.filter((value) => value !== name);
+                                                        field.onChange(updatedRoles);
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <div className="grid gap-1.5 leading-none">
+                                                <FormLabel className="cursor-pointer text-sm font-normal">
+                                                    {name}
+                                                    {isSuperAdminRole && isChecked && isSuperAdmin && (
+                                                        <span className="ml-2 text-xs text-orange-600">(Cannot be removed)</span>
+                                                    )}
+                                                    {isSuperAdminRole && superAdminExists && !isChecked && (
+                                                        <span className="ml-2 text-xs text-orange-600">(Already assigned)</span>
+                                                    )}
+                                                </FormLabel>
+                                            </div>
+                                        </FormItem>
+                                    );
+                                })}
                             </div>
                             <FormMessage />
                         </FormItem>

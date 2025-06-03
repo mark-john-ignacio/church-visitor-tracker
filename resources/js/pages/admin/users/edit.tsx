@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, PageProps, User } from '@/types';
 import { Head } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { UserForm } from './components/UserForm';
 
 interface EditUserProps extends PageProps {
@@ -39,13 +40,16 @@ export default function EditUser({ user, roles, isSuperAdmin, canEdit, superAdmi
         roles: string[];
     }
 
-    const defaultValues: UserFormDefaultValues = {
-        name: user.name,
-        email: user.email,
-        password: '',
-        password_confirmation: '',
-        roles: user.roles?.map((r: UserRole) => r.name) || [],
-    };
+    const defaultValues: UserFormDefaultValues = useMemo(
+        () => ({
+            name: user.name,
+            email: user.email,
+            password: '',
+            password_confirmation: '',
+            roles: user.roles?.map((r: UserRole) => r.name) || [],
+        }),
+        [user.name, user.email, user.roles],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

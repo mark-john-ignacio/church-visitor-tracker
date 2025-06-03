@@ -4,7 +4,7 @@ import { useDeleteConfirmation } from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { User } from '@/types';
+import { PageProps, User } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
@@ -81,7 +81,7 @@ export const userColumns: ColumnDef<User>[] = [
         cell: ({ row }) => {
             const user = row.original;
             const { confirmDelete } = useDeleteConfirmation();
-            const { auth } = usePage().props;
+            const { auth } = usePage<PageProps>().props;
 
             // Check if user is super admin
             const isSuperAdmin = (user.roles || []).some((role) => role.name === 'super_admin');

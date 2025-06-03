@@ -10,8 +10,9 @@ export const userSchema = z
     })
     .refine(
         (data) => {
-            if (data.password && data.password !== data.password_confirmation) {
-                return false;
+            // Only validate password confirmation if password is provided
+            if (data.password && data.password.length > 0) {
+                return data.password === data.password_confirmation;
             }
             return true;
         },
@@ -29,6 +30,6 @@ export function normalizeUserData(values: Partial<FormData>): FormData {
         email: values.email ?? '',
         password: values.password ?? undefined,
         password_confirmation: values.password_confirmation ?? undefined,
-        roles: values.roles ?? [],
+        roles: Array.isArray(values.roles) ? values.roles : [],
     };
 }
