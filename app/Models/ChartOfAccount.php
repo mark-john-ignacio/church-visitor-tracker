@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class ChartOfAccount extends Model
+class ChartOfAccount extends Model implements Auditable
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory, BelongsToCompany, AuditableTrait;
 
     // Constants for account categories
     public const CATEGORY_ASSET = 'ASSET';
@@ -37,6 +39,33 @@ class ChartOfAccount extends Model
         'created_at',
         'is_active'
     ];
+
+    /**
+     * Attributes to include in the Audit.
+     *
+     * @var array
+     */
+    protected $auditInclude = [
+        'account_code',
+        'account_name',
+        'account_category',
+        'account_type',
+        'is_contra_account',
+        'level',
+        'header_account_id',
+        'description',
+        'is_active',
+    ];
+
+    /**
+     * Generating tags for each model audited.
+     *
+     * @return array
+     */
+    public function generateTags(): array
+    {
+        return ['chart_of_account', 'accounting'];
+    }
 
     protected $fillable = [
         'company_id',
