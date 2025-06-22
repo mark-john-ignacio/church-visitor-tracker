@@ -30,16 +30,27 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
     const isItemActive = (item: NavItem): boolean => {
         if (!item.href) return false;
 
+        // Get pathnames only (ignore query params)
         const currentPath = new URL(page.url, window.location.origin).pathname;
         const itemPath = new URL(item.href, window.location.origin).pathname;
 
-        if (itemPath === currentPath) return true;
+        // Make sure itemPath ends with a slash for strict prefix matching
+        const normalizedItemPath = itemPath.endsWith('/') ? itemPath : itemPath + '/';
+        const normalizedCurrentPath = currentPath.endsWith('/') ? currentPath : currentPath + '/';
 
+        // Active if current path starts with item path (for subpages)
+        if (
+            normalizedCurrentPath.startsWith(normalizedItemPath) ||
+            normalizedCurrentPath === normalizedItemPath // for exact match
+        ) {
+            return true;
+        }
+
+        // Check children recursively
         if (item.children?.some((child) => isItemActive(child))) return true;
 
         return false;
     };
-
     useEffect(() => {
         const stateMap: Record<string, boolean> = {};
         const checkAndSetOpenState = (menuItems: NavItem[], parentPath: string = '') => {
@@ -115,11 +126,7 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                 {item.href ? (
                     <SidebarMenuButton
                         asChild
-                        isActive={(() => {
-                            const currentPath = new URL(page.url, window.location.origin).pathname;
-                            const itemPath = new URL(item.href, window.location.origin).pathname;
-                            return itemPath === currentPath;
-                        })()}
+                        isActive={isItemActive(item)}
                         tooltip={{ children: item.title, side: 'right' }}
                         size={level > 0 ? 'sm' : 'default'}
                         className={level > 0 ? `pl-${level}` : ''}
@@ -204,16 +211,7 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
 
                                 // Regular dropdown menu item
                                 return (
-                                    <DropdownMenuItem
-                                        key={child.title}
-                                        asChild={!!child.href}
-                                        className={(() => {
-                                            if (!child.href) return '';
-                                            const currentPath = new URL(page.url, window.location.origin).pathname;
-                                            const itemPath = new URL(child.href, window.location.origin).pathname;
-                                            return itemPath === currentPath ? 'bg-accent' : '';
-                                        })()}
-                                    >
+                                    <DropdownMenuItem key={child.title} asChild={!!child.href} className={isItemActive(child) ? 'bg-accent' : ''}>
                                         {child.href ? (
                                             <Link href={child.href} className="flex w-full items-center gap-2">
                                                 <DynamicIcon name={child.icon as unknown as keyof typeof LucideIcons} className="h-4 w-4" />
