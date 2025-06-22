@@ -28,8 +28,15 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
     const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
 
     const isItemActive = (item: NavItem): boolean => {
-        if (item.href === page.url) return true;
+        if (!item.href) return false;
+
+        const currentPath = new URL(page.url, window.location.origin).pathname;
+        const itemPath = new URL(item.href, window.location.origin).pathname;
+
+        if (itemPath === currentPath) return true;
+
         if (item.children?.some((child) => isItemActive(child))) return true;
+
         return false;
     };
 
@@ -108,7 +115,11 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                 {item.href ? (
                     <SidebarMenuButton
                         asChild
-                        isActive={item.href === page.url}
+                        isActive={(() => {
+                            const currentPath = new URL(page.url, window.location.origin).pathname;
+                            const itemPath = new URL(item.href, window.location.origin).pathname;
+                            return itemPath === currentPath;
+                        })()}
                         tooltip={{ children: item.title, side: 'right' }}
                         size={level > 0 ? 'sm' : 'default'}
                         className={level > 0 ? `pl-${level}` : ''}
@@ -195,8 +206,13 @@ export function NavMain({ items = [], isCollapsed = false }: { items: NavItem[];
                                 return (
                                     <DropdownMenuItem
                                         key={child.title}
-                                        asChild={!!child.href} // Only use asChild when href exists
-                                        className={page.url === child.href ? 'bg-accent' : ''}
+                                        asChild={!!child.href}
+                                        className={(() => {
+                                            if (!child.href) return '';
+                                            const currentPath = new URL(page.url, window.location.origin).pathname;
+                                            const itemPath = new URL(child.href, window.location.origin).pathname;
+                                            return itemPath === currentPath ? 'bg-accent' : '';
+                                        })()}
                                     >
                                         {child.href ? (
                                             <Link href={child.href} className="flex w-full items-center gap-2">
