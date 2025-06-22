@@ -23,17 +23,24 @@ class MenuItemsSeeder extends Seeder
         $manageNavigationPerm = Permission::firstOrCreate(['name' => 'manage_navigation']);
         
         // Add Chart of Accounts permissions
-        $viewMasterfilesPerm = Permission::firstOrCreate(['name' => 'view_masterfiles']);
-        $viewAccountingSetupPerm = Permission::firstOrCreate(['name' => 'view_accounting_setup']);
-        $manageChartOfAccountsPerm = Permission::firstOrCreate(['name' => 'manage_chart_of_accounts']);
-        $manageBanksPerm = Permission::firstOrCreate(['name' => 'manage_banks']);
+        // $viewMasterfilesPerm = Permission::firstOrCreate(['name' => 'view_masterfiles']);
+        // $viewAccountingSetupPerm = Permission::firstOrCreate(['name' => 'view_accounting_setup']);
+        // $manageChartOfAccountsPerm = Permission::firstOrCreate(['name' => 'manage_chart_of_accounts']);
+        // $manageBanksPerm = Permission::firstOrCreate(['name' => 'manage_banks']);
 
         // Create roles and assign permissions
         $superAdmin = Role::firstOrCreate(['name'=>'super_admin']);
         $superAdmin->givePermissionTo(Permission::all());
 
         $admin = Role::firstOrCreate(['name' => 'admin']);
-        $admin->givePermissionTo([$viewDashboardPerm, $viewAdminPerm, $manageUsersPerm, $viewMasterfilesPerm, $manageChartOfAccountsPerm, $viewAccountingSetupPerm]);
+        $admin->givePermissionTo([
+            $viewDashboardPerm, 
+            $viewAdminPerm, 
+            $manageUsersPerm, 
+            // $viewMasterfilesPerm, 
+            // $manageChartOfAccountsPerm, 
+            // $viewAccountingSetupPerm
+        ]);
 
         $user = Role::firstOrCreate(['name' => 'user']);
         $user->givePermissionTo('view_dashboard');
@@ -51,49 +58,49 @@ class MenuItemsSeeder extends Seeder
         );
 
         // Create Masterfiles section
-        $masterfilesMenu = MenuItem::updateOrCreate(
-            ['name' => 'Masterfiles'],
-            [
-                'route' => null,
-                'icon' => 'Database',
-                'permission_name' => 'view_masterfiles',
-                'order' => 5,
-                'type' => 'main'
-            ]
-        );
+        // $masterfilesMenu = MenuItem::updateOrCreate(
+        //     ['name' => 'Masterfiles'],
+        //     [
+        //         'route' => null,
+        //         'icon' => 'Database',
+        //         'permission_name' => 'view_masterfiles',
+        //         'order' => 5,
+        //         'type' => 'main'
+        //     ]
+        // );
 
-        $accountingSetupMenu = MenuItem::updateOrCreate(
-            ['name' => 'Accounting','parent_id' => $masterfilesMenu->id],
-            [
-            'route' => null,
-            'icon' => 'Calculator', 
-            'permission_name' => 'view_accounting_setup',
-            'order' => 1,
-            'type' => 'main'
-            ]
-        );
+        // $accountingSetupMenu = MenuItem::updateOrCreate(
+        //     ['name' => 'Accounting','parent_id' => $masterfilesMenu->id],
+        //     [
+        //     'route' => null,
+        //     'icon' => 'Calculator', 
+        //     'permission_name' => 'view_accounting_setup',
+        //     'order' => 1,
+        //     'type' => 'main'
+        //     ]
+        // );
 
-        MenuItem::updateOrCreate(
-            ['name' => 'Chart of Accounts', 'parent_id' => $accountingSetupMenu->id],
-            [
-                'route' => '/accounting-setup/chart-of-accounts',
-                'icon' => 'BarChart2',
-                'permission_name' => 'manage_chart_of_accounts',
-                'order' => 1,
-                'type' => 'main'
-            ]
-        );
+        // MenuItem::updateOrCreate(
+        //     ['name' => 'Chart of Accounts', 'parent_id' => $accountingSetupMenu->id],
+        //     [
+        //         'route' => '/accounting-setup/chart-of-accounts',
+        //         'icon' => 'BarChart2',
+        //         'permission_name' => 'manage_chart_of_accounts',
+        //         'order' => 1,
+        //         'type' => 'main'
+        //     ]
+        // );
 
-        MenuItem::updateOrCreate(
-            ['name' => 'Banks', 'parent_id' => $accountingSetupMenu->id],
-            [
-                'route' => '/accounting-setup/banks',
-                'icon' => 'CreditCard',
-                'permission_name' => 'manage_banks',
-                'order' => 2,
-                'type' => 'main'
-            ]
-        );
+        // MenuItem::updateOrCreate(
+        //     ['name' => 'Banks', 'parent_id' => $accountingSetupMenu->id],
+        //     [
+        //         'route' => '/accounting-setup/banks',
+        //         'icon' => 'CreditCard',
+        //         'permission_name' => 'manage_banks',
+        //         'order' => 2,
+        //         'type' => 'main'
+        //     ]
+        // );
 
         // Create admin section
         $adminMenu = MenuItem::updateOrCreate(
