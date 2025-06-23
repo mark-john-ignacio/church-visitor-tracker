@@ -1,73 +1,149 @@
-Tech Stack:
+# 🧑‍💻 Copilot Instructions for Church Visitor Tracker
 
-Backend: Laravel 12
+## 🧩 Project Overview
+This is a full-stack **Church Visitor Tracking** system. It logs and manages visitor information, follow-ups, service attendance, and provides company-level multitenancy. It is designed for use in a church admin dashboard, with a clean, modular, scalable codebase.
 
-Frontend: React (with Inertia.js + ShadCN UI + Tailwind)
+---
 
-Authentication: Using the Starter Kit
+## 🧱 Tech Stack
 
-Authorization: Laravel Permissions (spatie/laravel-permission package)
+| Layer        | Stack                                      |
+|--------------|--------------------------------------------|
+| Backend      | Laravel 12 (Modular, NWIDART Modules)       |
+| Frontend     | React + Inertia.js + ShadCN UI + Tailwind   |
+| Database     | MySQL (with Stancl Tenancy - single DB)     |
+| Auth         | Laravel Breeze Starter Kit (session-based)  |
+| Roles/Authz  | spatie/laravel-permission                   |
+| Audit Logs   | owen-it/laravel-auditing                    |
+| Multitenancy | stancl/tenancy (single DB, session-based)   |
 
-Audit Logging: owen-it/laravel-auditing (currently used by User Model)
+---
 
-Single Device Login: Use Laravel's built-in session management: #file:AuthenticatedSessionController.php
+## 🔑 Key Features and Architecture
 
-Multitenancy (Multi-Company): stancl/tenancy. The user can manage two or more companies and can switch between those. Each company has their own separate data. Using Single database mode and Tenancy Identity by Session #file:InitializeTenancyBySession.php
-Also Models can automatically belong to company #file:BelongsToCompany.php #file:ChartOfAccount.php is using this currently
+### 🧍 Visitor Model
+- `name`, `contact_info`, `visit_date`, `invited_by`, `tags`, `notes`
+- Belongs to a `company_id` (multi-company support)
+- HasMany `FollowUp`
 
-Modular Structure of Modules: Using nwidart/laravel-modules. Currently implemented for Accounting Setup and has Chart of Account for now
+### 📋 FollowUp Model
+- `visitor_id`, `status`, `note`, `followed_up_by`, `created_at`
+- BelongsTo `Visitor`
 
-Admin Panel Features:
+### 👤 User Model
+- Uses Laravel Breeze
+- Assigned roles/permissions (via Spatie)
+- Can belong to multiple companies
+- Audited (login/logout/create/update)
 
-Dynamic Sidebar Menu:
+---
 
-Super admins can create, edit, delete sidebar items (menus, links to pages or modules). Navigation Management #file:NavigationController.php
+## 🧮 Multitenancy
 
-Menus are permission-based (only show if the user has access). #file:HandleInertiaRequests.php
+### Tech
+- `stancl/tenancy` in **single-database** mode
+- Tenancy booted via session: `InitializeTenancyBySession.php`
+- Shared users across companies; switch context via session
 
-Role-Based Access Control:
+### Notes
+- All data (Visitors, FollowUps) must auto-scope by current company
+- Models use `BelongsToCompany.php` trait
+- Example: `ChartOfAccount.php`, `Visitor.php`, etc.
 
-Admin can create/edit roles (Ex: Admin, Manager, Accountant, Viewer). Role Management
+---
 
-Assign permissions per page, module, or custom actions (View, Edit, Delete, Export, etc). #file:RoleController.php
-No custom actions permission yet
+## 🔐 Auth & Authorization
 
-Permission Granting:
+- Auth: Laravel Breeze (session-based)
+- Single device login: Enforced in `AuthenticatedSessionController.php`
+- Roles/Permissions:
+  - Created and managed via `spatie/laravel-permission`
+  - Permissions tied to routes and UI components
+  - Example: `"view_visitors"`, `"export_dashboard"`
 
-Fine-grained permission assignment (even action-level like "can_export_reports").
+---
 
-Audit Trail:
+## 🧾 Audit Logging
+- Uses `owen-it/laravel-auditing`
+- Logs login, logout, create/update/delete actions
+- Currently enabled for `User.php`; extend to `Visitor`, `FollowUp`, `Company` models
 
-Logs who did what and when (create/update/delete/login/logout/company switch). only implemented on #file:User.php for now
+---
 
-Single Device Login:
+## 🧰 Admin Features
 
-Logging in from a second device will log out the first device.
-C:\Users\Mark\Herd\myxfin_laravel_react\app\Http\Controllers\Auth\AuthenticatedSessionController.php:37
+### ✅ Dynamic Sidebar Menu
+- Navigation editable by Super Admin via `NavigationController.php`
+- Items shown based on user permissions (`HandleInertiaRequests.php`)
 
-Multi-Company Management:
+### ✅ Role & Permission Management
+- Use `RoleController.php` and permission-seeding
+- Fine-grained control possible: `can_export_reports`, `can_edit_followups`
 
-Users can manage multiple companies.
+---
 
-Can switch between companies (like Quickbooks or Xero).
+## 📦 Modular Codebase
+- NWIDART Laravel Modules
+- Each major feature (e.g., Accounting, Visitors) is a module
+- Keep actions, services, policies, requests inside respective module
 
-Data is scoped by company.
+---
 
-Coding Style:
+## 📋 MVP Pages (via Inertia.js)
 
-Modular, clean architecture.
+| Path                 | Page                    |
+|----------------------|-------------------------|
+| `/login`             | Auth                    |
+| `/dashboard`         | Visitor summary         |
+| `/visitors`          | Visitor list            |
+| `/visitors/:id`      | Visitor detail + follow-ups |
+| `/follow-ups`        | Global follow-up log (optional) |
+| `/admin/navigation`  | Sidebar management      |
+| `/admin/roles`       | Role/permission editor  |
 
-Separation of concerns (services, repositories, actions, etc).
+---
 
-Code ready for scaling.
+## 🎯 MVP Milestones
 
-Additional Feature: Company User License Limits (Not implemented yet)
+### Week 1
+- [ ] Setup Laravel Modules + Inertia.js
+- [ ] Create Visitor & FollowUp models with tenancy
+- [ ] Setup audit trail + basic Inertia page layout
 
-Each Company can have a license limit (e.g., allowed 5 users, 10 users, etc.).
+### Week 2
+- [ ] Visitor CRUD (frontend + backend)
+- [ ] Follow-up form with status
+- [ ] Dashboard summary (Recharts)
 
-When an admin tries to invite or create a new user:
+### Week 3
+- [ ] Permission-based sidebar rendering
+- [ ] Company/Church switching logic
+- [ ] UI polish with ShadCN UI components
 
-The system checks if the current number of users is below the license limit.
+---
 
-If they reached the limit, prevent creation and show a friendly error like:
-➔ "User limit reached for your plan. Please upgrade your subscription."
+## 💡 Copilot Notes
+
+- Prefer service classes for business logic
+- Keep controllers lean (delegate to Actions/Services)
+- Use Eloquent scopes for multitenancy (`->companyScope()`)
+- Use `Spatie\Permission\Traits\HasRoles` on User model
+- Use `ShadCN UI` components (modals, tables, dropdowns)
+
+---
+
+## 🧪 Example Snippets to Guide Copilot
+
+### BelongsToCompany Trait
+```php
+public static function booted() {
+    static::addGlobalScope('company', function ($query) {
+        if ($companyId = session('company_id')) {
+            $query->where('company_id', $companyId);
+        }
+    });
+
+    static::creating(function ($model) {
+        $model->company_id = session('company_id');
+    });
+}
