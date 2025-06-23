@@ -1,13 +1,15 @@
 'use client';
 
-import { useDeleteConfirmation } from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
+import {
+    createSortableColumn,
+    createBadgeColumn,
+    createDateColumn,
+    createConditionalActionsColumn,
+} from '@/utils/data-table/column-builders';
+import { Button } from '@/components/ui/button';
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
-import { toast } from 'sonner';
 
 export interface Permission {
     id: number;
@@ -58,75 +60,22 @@ export const permissionColumns: ColumnDef<Permission>[] = [
             );
         },
     },
-    {
+    createBadgeColumn({
         accessorKey: 'guard_name',
         header: 'Guard',
-        cell: ({ row }) => {
-            const guardName = row.getValue('guard_name') as string;
-            return <Badge variant="secondary">{guardName || 'web'}</Badge>;
-        },
-    },
-    {
-        accessorKey: 'created_at',
-        header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-                Created
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-        cell: ({ row }) => {
-            const date = new Date(row.getValue('created_at'));
-            return date.toLocaleDateString();
-        },
-    },
-    {
-        id: 'actions',
-        cell: ({ row }) => {
-            const permission = row.original;
-            const { confirmDelete } = useDeleteConfirmation();
-            const isSystem = isSystemPermission(permission.name);
-
-            // System permissions can only be viewed, not edited or deleted
-            const canEdit = !isSystem;
-            const canDelete = !isSystem;
-
-            const handleDelete = () => {
-                const deleteAction = () => {
-                    router.delete(route('admin.permissions.destroy', permission.id), {
-                        onSuccess: () => {
-                            toast.success('Permission deleted successfully');
-                        },
-                        onError: (errors) => {
-                            const errorMessage = errors.default || 'Failed to delete permission';
-                            toast.error(errorMessage);
-                        },
-                    });
-                };
-
-                const customMessage = `Are you sure you want to delete the permission "${permission.name}"? This action cannot be undone and will affect all roles that have this permission.`;
-                confirmDelete(permission, deleteAction, customMessage);
-            };
-
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href={route('admin.permissions.edit', permission.id)}>{canEdit ? 'Edit Permission' : 'View Permission'}</Link>
-                        </DropdownMenuItem>
-                        {canDelete && (
-                            <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                                Delete Permission
-                            </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            );
-        },
-    },
+        defaultVariant: 'secondary',
+        fallbackValue: 'web',
+    }),
+    createDateColumn('created_at', 'Created'),
+    createConditionalActionsColumn({
+        editRoute: (id) => route('admin.permissions.destroy', id),
+        deleteRoute: (id) => route('admin.permissions.destroy', id),
+        getItemName: (permission) => permission.name,
+        successMessage: 'Permission deleted successfully',
+        errorMessage: 'Failed to delete permission',
+        canEdit: (permission) => !isSystemPermission(permission.name),
+        canDelete: (permission) => !isSystemPermission(permission.name),
+        getEditLabel: (permission) => !isSystemPermission(permission.name) ? 'Edit Permission' : 'View Permission',
+        deleteLabel: 'Delete Permission',
+    }),
 ];
