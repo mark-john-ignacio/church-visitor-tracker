@@ -1,52 +1,47 @@
 <?php
 
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NavigationController;
+use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\NavigationController;
-use App\Http\Controllers\CompanySwitcherController;
-use App\Http\Middleware\InitializeTenancyBySession;
 
-// Routes that don't need tenant context
+// Welcome page (no auth required)
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return Inertia::render('Welcome', [
+        'laravelVersion' => app()->version(),
+        'phpVersion' => phpversion(),
+    ]);
 })->name('home');
 
-// Apply custom tenant middleware to all authenticated routes
-Route::middleware(['web', 'auth', InitializeTenancyBySession::class])
-    ->group(function () {
+// Authentication routes
+require __DIR__.'/auth.php';
 
-        // Dashboard
-        Route::get('dashboard', fn () => Inertia::render('dashboard'))
-            ->middleware('can:view_admin')
-            ->name('dashboard');
+// Authenticated routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+    
+    // Company switching
+    Route::get('/companies/{company}/switch', [CompanyController::class, 'switch'])
+        ->name('companies.switch');
+    Route::get('/api/user-companies', [CompanyController::class, 'getUserCompanies'])
+        ->name('api.user-companies');
+    
+    // Admin routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Navigation management
+        Route::resource('navigation', NavigationController::class)->except(['show', 'create', 'edit']);
+        Route::patch('navigation/{menuItem}/reorder', [NavigationController::class, 'reorder'])
+            ->name('navigation.reorder');
+        Route::patch('navigation/{menuItem}/toggle', [NavigationController::class, 'toggle'])
+            ->name('navigation.toggle');
             
-        // Admin routes
-        Route::middleware(['verified', 'can:manage_users,' . App\Models\User::class])
-            ->prefix('admin')
-            ->name('admin.')
-            ->group(function () {
-                Route::resource('users', UserManagementController::class)
-                        ->except(['show']);
-
-                Route::resource('roles', RoleController::class);
-                Route::resource('permissions', PermissionController::class);
-                Route::resource('navigation', NavigationController::class);
-            });
-
-        // Company Switching Routes
-        Route::prefix('companies')
-            ->name('companies.')
-            ->group(function () {
-                Route::post('switch', [CompanySwitcherController::class, 'switch'])->name('switch');
-                Route::get('list', [CompanySwitcherController::class, 'getCompanies'])->name('list');
-            });
-
-        // Settings routes
-        require __DIR__.'/settings.php';
+        // Role management
+        Route::resource('roles', RoleController::class)->except(['show', 'create', 'edit']);
     });
 
-// Auth routes (keep outside of tenant middleware)
-require __DIR__.'/auth.php';
+});

@@ -6,10 +6,9 @@ use App\Models\Company;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Stancl\Tenancy\Contracts\Tenant;
 
 /**
- * @property-read Company $tenant
+ * @property-read Company $company
  */
 trait BelongsToCompany
 {
@@ -17,34 +16,40 @@ trait BelongsToCompany
     {
         // When model is created, fill the company_id column
         static::creating(function (Model $model) {
-            if (!$model->getAttribute('company_id') && tenant()) {
-                $model->setAttribute('company_id', tenant()->getTenantKey());
+            if (!$model->getAttribute('company_id')) {
+                $companyId = session('company_id');
+                if ($companyId) {
+                    $model->setAttribute('company_id', $companyId);
+                }
             }
         });
 
-        // Global scope to only show models for current tenant
+        // Global scope to only show models for current company
         static::addGlobalScope('company', function (Builder $builder) {
-            if (tenant()) {
-                $builder->where('company_id', tenant()->getTenantKey());
+            $companyId = session('company_id');
+            if ($companyId) {
+                $builder->where('company_id', $companyId);
             }
         });
-
-        // Enhance the findOrFail method to properly check tenant
-        static::registerModelEvent('retrieved', function (Model $model) {
-            if (tenant() && $model->getAttribute('company_id') != tenant()->getTenantKey()) {
-                throw new ModelNotFoundException("No query results for model [" . get_class($model) . "] " . $model->getKey());
-            }
-        });
-    }
-
-    public function tenant()
-    {
-        return $this->company();
     }
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Scope a query to only include models for a specific company.
+     */
+    public function scopeCompanyScope(Builder $query, int $companyId = null): Builder
+    {
+        $companyId = $companyId ?? session('company_id');
+        
+        if ($companyId) {
+            return $query->where('company_id', $companyId);
+        }
+        
+        return $query;
     }
 
     /**
@@ -55,8 +60,9 @@ trait BelongsToCompany
         $instance = new static;
         $query = $instance->newQuery();
         
-        if (tenant()) {
-            $query->where('company_id', tenant()->getTenantKey());
+        $companyId = session('company_id');
+        if ($companyId) {
+            $query->where('company_id', $companyId);
         }
         
         return $query->find($id, $columns);
@@ -70,8 +76,9 @@ trait BelongsToCompany
         $instance = new static;
         $query = $instance->newQuery();
         
-        if (tenant()) {
-            $query->where('company_id', tenant()->getTenantKey());
+        $companyId = session('company_id');
+        if ($companyId) {
+            $query->where('company_id', $companyId);
         }
         
         return $query->findOrFail($id, $columns);
