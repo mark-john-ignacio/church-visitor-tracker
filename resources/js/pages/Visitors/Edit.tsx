@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import React from 'react';
@@ -82,14 +82,16 @@ export default function Edit({ visitor, auth, errors }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="text-xl leading-tight font-semibold text-gray-800">Edit Visitor: {visitor.name}</h2>}
-        >
+        <AppLayout>
             <Head title={`Edit ${visitor.name}`} />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold">Edit Visitor: {visitor.name}</h1>
+                    <p className="text-muted-foreground">Update visitor information</p>
+                </div>
+                
+                <div className="max-w-4xl">
                     <Card>
                         <CardHeader>
                             <CardTitle>Edit Visitor Information</CardTitle>
@@ -305,6 +307,6 @@ export default function Edit({ visitor, auth, errors }: Props) {
                     </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

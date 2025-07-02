@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import AppLayout from '@/layouts/app-layout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, Edit, Menu, Navigation, Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -104,11 +104,15 @@ export default function Navigation({ menuItems, auth }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
+        <AppLayout>
+            <Head title="Navigation Management" />
+            
+            <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl leading-tight font-semibold text-gray-800">Navigation Management</h2>
+                    <div>
+                        <h1 className="text-3xl font-bold">Navigation Management</h1>
+                        <p className="text-muted-foreground">Manage sidebar menu items</p>
+                    </div>
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                             <Button onClick={() => openDialog()}>
@@ -216,18 +220,14 @@ export default function Navigation({ menuItems, auth }: Props) {
                         </DialogContent>
                     </Dialog>
                 </div>
-            }
-        >
-            <Head title="Navigation Management" />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Navigation className="h-5 w-5" />
-                                Sidebar Navigation Items
-                            </CardTitle>
+                {/* Menu Items List */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Menu className="h-5 w-5" />
+                            Sidebar Navigation Items
+                        </CardTitle>
                             <CardDescription>
                                 Manage the navigation menu items that appear in the sidebar. Items are displayed in the order shown below.
                             </CardDescription>
@@ -318,7 +318,6 @@ export default function Navigation({ menuItems, auth }: Props) {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

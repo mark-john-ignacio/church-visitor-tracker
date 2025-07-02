@@ -356,7 +356,6 @@ export default function Show({ visitor, auth }: Props) {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
         </AppLayout>
     );
 }

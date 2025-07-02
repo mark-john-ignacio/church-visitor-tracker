@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import AppLayout from '@/layouts/app-layout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Edit, Lock, Plus, Shield, Trash2, Users } from 'lucide-react';
 import React, { useState } from 'react';
@@ -122,11 +122,15 @@ export default function Roles({ roles, permissions, auth }: Props) {
     );
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
+        <AppLayout>
+            <Head title="Roles & Permissions" />
+            
+            <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl leading-tight font-semibold text-gray-800">Roles & Permissions</h2>
+                    <div>
+                        <h1 className="text-3xl font-bold">Roles & Permissions</h1>
+                        <p className="text-muted-foreground">Manage user roles and permissions</p>
+                    </div>
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                             <Button onClick={() => openDialog()}>
@@ -203,17 +207,12 @@ export default function Roles({ roles, permissions, auth }: Props) {
                         </DialogContent>
                     </Dialog>
                 </div>
-            }
-        >
-            <Head title="Roles & Permissions" />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-6xl space-y-6 sm:px-6 lg:px-8">
-                    {/* Overview Cards */}
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        <Card>
-                            <CardContent className="flex items-center p-6">
-                                <Shield className="h-8 w-8 text-blue-600" />
+                {/* Overview Cards */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <Card>
+                        <CardContent className="flex items-center p-6">
+                            <Shield className="h-8 w-8 text-blue-600" />
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-600">Total Roles</p>
                                     <p className="text-2xl font-bold text-gray-900">{roles.length}</p>
@@ -311,7 +310,6 @@ export default function Roles({ roles, permissions, auth }: Props) {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }
