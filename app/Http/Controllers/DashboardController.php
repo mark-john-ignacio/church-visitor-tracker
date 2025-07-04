@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $recentActivities = $this->followUpService->getRecentActivities(5);
         $overdueFollowUps = $this->followUpService->getOverdueFollowUps();
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('dashboard', [
             'stats' => array_merge($visitorStats, $followUpStats),
             'recentActivities' => $recentActivities,
             'overdueFollowUps' => $overdueFollowUps,
@@ -45,14 +45,14 @@ class DashboardController extends Controller
             $date = now()->subDays($i);
             $visitorTrends[] = [
                 'date' => $date->format('M j'),
-                'visitors' => \Modules\Visitors\app\Models\Visitor::whereDate('visit_date', $date)->count(),
-                'first_time' => \Modules\Visitors\app\Models\Visitor::whereDate('visit_date', $date)
+                'visitors' => \Modules\Visitors\Models\Visitor::whereDate('visit_date', $date)->count(),
+                'first_time' => \Modules\Visitors\Models\Visitor::whereDate('visit_date', $date)
                     ->where('is_first_time', true)->count(),
             ];
         }
 
         // Get follow-up status distribution
-        $followUpDistribution = \Modules\Visitors\app\Models\FollowUp::selectRaw('status, count(*) as count')
+        $followUpDistribution = \Modules\Visitors\Models\FollowUp::selectRaw('status, count(*) as count')
             ->groupBy('status')
             ->get()
             ->map(function ($item) {
@@ -64,7 +64,7 @@ class DashboardController extends Controller
             });
 
         // Get age group distribution
-        $ageGroupDistribution = \Modules\Visitors\app\Models\Visitor::selectRaw('age_group, count(*) as count')
+        $ageGroupDistribution = \Modules\Visitors\Models\Visitor::selectRaw('age_group, count(*) as count')
             ->whereNotNull('age_group')
             ->groupBy('age_group')
             ->get()
