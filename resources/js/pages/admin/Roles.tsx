@@ -124,7 +124,7 @@ export default function Roles({ roles, permissions, auth }: Props) {
     return (
         <AppLayout>
             <Head title="Roles & Permissions" />
-            
+
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -213,103 +213,103 @@ export default function Roles({ roles, permissions, auth }: Props) {
                     <Card>
                         <CardContent className="flex items-center p-6">
                             <Shield className="h-8 w-8 text-blue-600" />
-                                <div className="ml-4">
-                                    <p className="text-sm font-medium text-gray-600">Total Roles</p>
-                                    <p className="text-2xl font-bold text-gray-900">{roles.length}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-600">Total Roles</p>
+                                <p className="text-2xl font-bold text-gray-900">{roles.length}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                        <Card>
-                            <CardContent className="flex items-center p-6">
-                                <Lock className="h-8 w-8 text-green-600" />
-                                <div className="ml-4">
-                                    <p className="text-sm font-medium text-gray-600">Total Permissions</p>
-                                    <p className="text-2xl font-bold text-gray-900">{permissions.length}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="flex items-center p-6">
-                                <Users className="h-8 w-8 text-purple-600" />
-                                <div className="ml-4">
-                                    <p className="text-sm font-medium text-gray-600">Users with Roles</p>
-                                    <p className="text-2xl font-bold text-gray-900">{roles.reduce((sum, role) => sum + role.users_count, 0)}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Roles List */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Roles Management</CardTitle>
-                            <CardDescription>Manage user roles and their associated permissions.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {roles.length > 0 ? (
-                                <div className="space-y-4">
-                                    {roles.map((role) => (
-                                        <div key={role.id} className="rounded-lg border p-6">
-                                            <div className="mb-4 flex items-start justify-between">
-                                                <div>
-                                                    <h3 className="text-lg font-semibold">{role.name}</h3>
-                                                    <p className="text-sm text-gray-600">
-                                                        {role.users_count} user{role.users_count !== 1 ? 's' : ''} • {role.permissions.length}{' '}
-                                                        permission{role.permissions.length !== 1 ? 's' : ''}
-                                                    </p>
-                                                </div>
-                                                <div className="flex space-x-2">
-                                                    <Button onClick={() => openDialog(role)} variant="outline" size="sm">
-                                                        <Edit className="mr-1 h-4 w-4" />
-                                                        Edit
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => deleteRole(role.id)}
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        disabled={role.name === 'Super Admin'}
-                                                    >
-                                                        <Trash2 className="mr-1 h-4 w-4" />
-                                                        Delete
-                                                    </Button>
-                                                </div>
-                                            </div>
+                        <CardContent className="flex items-center p-6">
+                            <Lock className="h-8 w-8 text-green-600" />
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-600">Total Permissions</p>
+                                <p className="text-2xl font-bold text-gray-900">{permissions.length}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                                            <Separator className="mb-4" />
-
-                                            <div>
-                                                <h4 className="mb-2 font-medium">Permissions:</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {role.permissions.length > 0 ? (
-                                                        role.permissions.map((permission) => (
-                                                            <Badge key={permission.id} variant="secondary">
-                                                                {permission.name.replace(/_/g, ' ')}
-                                                            </Badge>
-                                                        ))
-                                                    ) : (
-                                                        <p className="text-sm text-gray-500">No permissions assigned</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="py-12 text-center">
-                                    <Shield className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                                    <h3 className="mb-2 text-lg font-medium text-gray-900">No roles found</h3>
-                                    <p className="mb-4 text-gray-500">Get started by creating your first user role.</p>
-                                    <Button onClick={() => openDialog()}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Create Role
-                                    </Button>
-                                </div>
-                            )}
+                    <Card>
+                        <CardContent className="flex items-center p-6">
+                            <Users className="h-8 w-8 text-purple-600" />
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-600">Users with Roles</p>
+                                <p className="text-2xl font-bold text-gray-900">{roles.reduce((sum, role) => sum + role.users_count, 0)}</p>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Roles List */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Roles Management</CardTitle>
+                        <CardDescription>Manage user roles and their associated permissions.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {roles.length > 0 ? (
+                            <div className="space-y-4">
+                                {roles.map((role) => (
+                                    <div key={role.id} className="rounded-lg border p-6">
+                                        <div className="mb-4 flex items-start justify-between">
+                                            <div>
+                                                <h3 className="text-lg font-semibold">{role.name}</h3>
+                                                <p className="text-sm text-gray-600">
+                                                    {role.users_count} user{role.users_count !== 1 ? 's' : ''} • {role.permissions.length} permission
+                                                    {role.permissions.length !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <Button onClick={() => openDialog(role)} variant="outline" size="sm">
+                                                    <Edit className="mr-1 h-4 w-4" />
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    onClick={() => deleteRole(role.id)}
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    disabled={role.name === 'Super Admin'}
+                                                >
+                                                    <Trash2 className="mr-1 h-4 w-4" />
+                                                    Delete
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <Separator className="mb-4" />
+
+                                        <div>
+                                            <h4 className="mb-2 font-medium">Permissions:</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {role.permissions.length > 0 ? (
+                                                    role.permissions.map((permission) => (
+                                                        <Badge key={permission.id} variant="secondary">
+                                                            {permission.name.replace(/_/g, ' ')}
+                                                        </Badge>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-sm text-gray-500">No permissions assigned</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <Shield className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                                <h3 className="mb-2 text-lg font-medium text-gray-900">No roles found</h3>
+                                <p className="mb-4 text-gray-500">Get started by creating your first user role.</p>
+                                <Button onClick={() => openDialog()}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Role
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </AppLayout>
     );
 }

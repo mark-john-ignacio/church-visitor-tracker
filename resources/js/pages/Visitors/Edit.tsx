@@ -90,7 +90,7 @@ export default function Edit({ visitor, auth, errors }: Props) {
                     <h1 className="text-3xl font-bold">Edit Visitor: {visitor.name}</h1>
                     <p className="text-muted-foreground">Update visitor information</p>
                 </div>
-                
+
                 <div className="max-w-4xl">
                     <Card>
                         <CardHeader>

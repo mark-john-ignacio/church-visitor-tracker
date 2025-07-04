@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Edit, Menu, Navigation, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Edit, Menu, Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface MenuItem {
@@ -40,9 +40,9 @@ export default function Navigation({ menuItems, auth }: Props) {
         url: '',
         icon: '',
         permission: '',
-        target: '_self',
+        target: '_self' as '_self' | '_blank',
         description: '',
-        is_active: true,
+        is_active: true as boolean,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -74,7 +74,7 @@ export default function Navigation({ menuItems, auth }: Props) {
                 url: item.url,
                 icon: item.icon || '',
                 permission: item.permission || '',
-                target: item.target || '_self',
+                target: (item.target as '_self' | '_blank') || '_self',
                 description: item.description || '',
                 is_active: item.is_active,
             });
@@ -106,7 +106,7 @@ export default function Navigation({ menuItems, auth }: Props) {
     return (
         <AppLayout>
             <Head title="Navigation Management" />
-            
+
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -177,7 +177,7 @@ export default function Navigation({ menuItems, auth }: Props) {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="target">Target</Label>
-                                    <Select value={data.target} onValueChange={(value) => setData('target', value)}>
+                                    <Select value={data.target} onValueChange={(value) => setData('target', value as '_self' | '_blank')}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -228,96 +228,96 @@ export default function Navigation({ menuItems, auth }: Props) {
                             <Menu className="h-5 w-5" />
                             Sidebar Navigation Items
                         </CardTitle>
-                            <CardDescription>
-                                Manage the navigation menu items that appear in the sidebar. Items are displayed in the order shown below.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {menuItems.length > 0 ? (
-                                <div className="space-y-2">
-                                    {menuItems.map((item, index) => (
-                                        <div
-                                            key={item.id}
-                                            className={`flex items-center justify-between rounded-lg border p-4 ${
-                                                item.is_active ? 'bg-white' : 'bg-gray-50'
-                                            }`}
-                                        >
-                                            <div className="flex items-center space-x-4">
-                                                <div className="flex flex-col space-y-1">
-                                                    <Button
-                                                        onClick={() => moveItem(item.id, 'up')}
-                                                        disabled={index === 0}
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0"
-                                                    >
-                                                        <ArrowUp className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => moveItem(item.id, 'down')}
-                                                        disabled={index === menuItems.length - 1}
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0"
-                                                    >
-                                                        <ArrowDown className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-
-                                                <div className="flex-1">
-                                                    <div className="mb-1 flex items-center gap-2">
-                                                        <h3 className="font-medium">{item.title}</h3>
-                                                        {!item.is_active && <Badge variant="secondary">Inactive</Badge>}
-                                                        {item.permission && (
-                                                            <Badge variant="outline" className="text-xs">
-                                                                {item.permission}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-sm text-gray-600">
-                                                        URL: <code className="rounded bg-gray-100 px-1">{item.url}</code>
-                                                        {item.icon && (
-                                                            <span className="ml-2">
-                                                                Icon: <code className="rounded bg-gray-100 px-1">{item.icon}</code>
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {item.description && <p className="mt-1 text-sm text-gray-500">{item.description}</p>}
-                                                </div>
+                        <CardDescription>
+                            Manage the navigation menu items that appear in the sidebar. Items are displayed in the order shown below.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {menuItems.length > 0 ? (
+                            <div className="space-y-2">
+                                {menuItems.map((item, index) => (
+                                    <div
+                                        key={item.id}
+                                        className={`flex items-center justify-between rounded-lg border p-4 ${
+                                            item.is_active ? 'bg-white' : 'bg-gray-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center space-x-4">
+                                            <div className="flex flex-col space-y-1">
+                                                <Button
+                                                    onClick={() => moveItem(item.id, 'up')}
+                                                    disabled={index === 0}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0"
+                                                >
+                                                    <ArrowUp className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    onClick={() => moveItem(item.id, 'down')}
+                                                    disabled={index === menuItems.length - 1}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0"
+                                                >
+                                                    <ArrowDown className="h-3 w-3" />
+                                                </Button>
                                             </div>
 
-                                            <div className="flex items-center space-x-2">
-                                                <Button
-                                                    onClick={() => toggleActive(item.id, item.is_active)}
-                                                    variant={item.is_active ? 'outline' : 'default'}
-                                                    size="sm"
-                                                >
-                                                    {item.is_active ? 'Deactivate' : 'Activate'}
-                                                </Button>
-                                                <Button onClick={() => openDialog(item)} variant="outline" size="sm">
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button onClick={() => deleteItem(item.id)} variant="destructive" size="sm">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                            <div className="flex-1">
+                                                <div className="mb-1 flex items-center gap-2">
+                                                    <h3 className="font-medium">{item.title}</h3>
+                                                    {!item.is_active && <Badge variant="secondary">Inactive</Badge>}
+                                                    {item.permission && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {item.permission}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-gray-600">
+                                                    URL: <code className="rounded bg-gray-100 px-1">{item.url}</code>
+                                                    {item.icon && (
+                                                        <span className="ml-2">
+                                                            Icon: <code className="rounded bg-gray-100 px-1">{item.icon}</code>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {item.description && <p className="mt-1 text-sm text-gray-500">{item.description}</p>}
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="py-12 text-center">
-                                    <Menu className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                                    <h3 className="mb-2 text-lg font-medium text-gray-900">No menu items</h3>
-                                    <p className="mb-4 text-gray-500">Get started by adding your first navigation item.</p>
-                                    <Button onClick={() => openDialog()}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Menu Item
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <Button
+                                                onClick={() => toggleActive(item.id, item.is_active)}
+                                                variant={item.is_active ? 'outline' : 'default'}
+                                                size="sm"
+                                            >
+                                                {item.is_active ? 'Deactivate' : 'Activate'}
+                                            </Button>
+                                            <Button onClick={() => openDialog(item)} variant="outline" size="sm">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button onClick={() => deleteItem(item.id)} variant="destructive" size="sm">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <Menu className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                                <h3 className="mb-2 text-lg font-medium text-gray-900">No menu items</h3>
+                                <p className="mb-4 text-gray-500">Get started by adding your first navigation item.</p>
+                                <Button onClick={() => openDialog()}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Menu Item
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </AppLayout>
     );
 }
